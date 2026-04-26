@@ -1,0 +1,801 @@
+PHANTOM HAND
+GESTURE INTERFACE OPERATING SYSTEM
+FULL EXECUTION DOCUMENT — COPY-PASTE PROMPTS — VIBE CODER EDITION
+10 PHASES
+60+ BUILD DAYS
+COST: $0.00
+This document tells you EXACTLY what to type into Antigravity, Jules, and AI Studio.
+You do not need to understand the code. Copy the prompt. Paste it. Review the output.
+HOW TO USE THIS DOCUMENT
+You are a vibe coder. That means you understand what you want to build, you have strong taste, and you can judge if something looks right or wrong — but you do not write raw code yourself. That is fine. That is what this document is for.
+Every prompt in this document is a copy-paste block. You open Antigravity, paste it into the agent chat, and the agent builds that piece of the project. You review the result, test it, and move to the next prompt.
+RULE: Never move to the next prompt until the current one works. A broken Phase 1 will corrupt every phase after it. No exceptions.
+What Each Box Means
+BOX TYPE
+WHAT IT IS
+PROMPT
+Copy this entire block and paste into Antigravity agent chat
+WARNING
+Important instruction you must not skip
+JULES TASK
+Do this part in Google Jules instead of Antigravity
+AI STUDIO
+Do this part in Google AI Studio
+CHECK
+Test this before moving on. Your completion gate.
+MULTI-PLATFORM STRATEGY — WHEN TO USE WHAT
+You have access to multiple free AI platforms. Use all of them simultaneously. Each one has a different strength. Running them in parallel is your biggest advantage as a vibe coder.
+PLATFORM
+BEST FOR
+USE IN THESE PHASES
+HOW TO INTEGRATE
+Antigravity IDE
+Main project assembly, full-stack building, agent coordination
+All phases — primary tool
+This IS the main project. Everything lives here.
+Google Jules
+Isolated module building, heavy Python backend tasks, async code
+Phases 1, 2, 3, 4, 5 — backend modules only
+Build module in Jules → copy the .py file → paste into Antigravity project folder
+Google AI Studio
+Prompt engineering, testing Gemini responses, AI feature design
+Phases 7, 8 — all AI features
+Design and test your Gemini prompts here → copy final prompt string → paste into gemini_client.py
+Gemini Chat (any account)
+Generating design specs, reviewing code logic, explaining errors
+Any phase when stuck
+Use for thinking and planning only. Do not build in chat. Build in IDE.
+How the Multi-Platform Workflow Operates
+Antigravity is your headquarters. The project lives there. Never let another platform own the files.
+Jules runs parallel tasks. While Antigravity builds Phase 3 Drawing Engine, Jules builds the Shape Recognizer for Phase 4 at the same time. You then paste Phase 4 into the project when Phase 3 is done.
+AI Studio is your AI laboratory. Before you ask Antigravity to build the Gemini integration, you go to AI Studio, test your exact prompts against Gemini, and find what works. Then you give Antigravity the working prompt to embed in code.
+You are the integration layer. You move files between platforms. You paste the output from Jules into Antigravity. You copy the prompt string from AI Studio into the code.
+CRITICAL: When copying code from Jules or AI Studio into Antigravity, always tell the Antigravity agent: 'I am pasting code from an external tool. Review it for compatibility with the existing project structure, fix any import errors or conflicts, and confirm it integrates correctly.' Do not paste silently.
+PHASE 0 — ENVIRONMENT SETUP (DAY 1–2)
+Do this on your own machine. No coding required. Just installations and configuration.
+Step 1 — Install Core Tools
+Go to each link and download the installer for your operating system (Windows/macOS/Linux).
+TOOL
+WHERE TO GET IT
+HOW TO VERIFY
+Python 3.11+
+python.org/downloads
+Open terminal, type: python --version
+Node.js 20 LTS
+nodejs.org
+Open terminal, type: node --version
+Git
+git-scm.com
+Open terminal, type: git --version
+Docker Desktop
+docker.com/products/docker-desktop
+Open Docker app, wait for green status
+Antigravity IDE
+antigravity.google.com
+Open IDE, sign in with Google account
+Step 2 — Create Project Folder
+Open your terminal (Command Prompt on Windows, Terminal on macOS/Linux) and type these lines one at a time, pressing Enter after each:
+PROMPT — TERMINAL — Create Project
+mkdir phantom-hand
+cd phantom-hand
+git init
+mkdir backend frontend tests docker docs
+mkdir backend/core backend/ai backend/utils backend/models
+Step 3 — Configure Antigravity
+Open Antigravity IDE
+File > Open Folder > select the phantom-hand folder you just created
+In Antigravity settings, set the AI model to Gemini 3.1 Pro
+Set Agent Mode to 'Agent-Assisted' — this means you approve before agent runs code
+Create 5 agent slots in the Agent Manager panel and name them: Backend, Frontend, AI-Features, Testing, DevOps
+Step 4 — Token Rotation Setup
+Give this prompt to the Backend agent in Antigravity:
+PROMPT — ANTIGRAVITY BACKEND AGENT — token_manager.py
+Create a file called token_manager.py inside the backend/ai/ folder.
+This file manages 10 Google Gemini API keys by rotating between them automatically.
+When one key hits a rate limit (HTTP 429 error), the manager switches to the next key.
+No API call should ever fail due to rate limiting — it just moves to the next account.
+Requirements:
+- Read all 10 API keys from a .env file in the project root
+- Keys are named GEMINI_KEY_1 through GEMINI_KEY_10
+- Round-robin selection by default
+- On HTTP 429, skip that key and mark it as cooling down for 5 minutes
+- After 5 minutes, key is eligible again
+- All requests are queued — nothing is dropped
+- Log every key switch to phantom_hand.log with timestamp
+- Expose a single function: get_available_key() that returns a valid key string
+- Expose a function: report_rate_limit(key) to mark a key as limited
+Also create the .env file with placeholder values:
+GEMINI_KEY_1=your_key_here
+(repeat for all 10)
+Also create a .gitignore file that ignores the .env file so keys are never uploaded.
+Use Python 3.11, no external libraries except python-dotenv.
+Include docstrings on every function. Log errors to phantom_hand.log.
+After Antigravity finishes: Open the .env file and replace all 'your_key_here' values with your actual Gemini API keys from all 10 accounts. Get them from aistudio.google.com > API Keys.
+PHASE 1 — HAND TRACKING ENGINE (DAY 3–5)
+This is the most important phase. If the camera cannot track your hand accurately and fast, nothing else works. Do not rush this.
+Step 1 — Install Python Dependencies
+PROMPT — TERMINAL — Install backend dependencies
+cd phantom-hand/backend
+python -m venv venv
+venv\Scripts\activate         (Windows)
+source venv/bin/activate        (macOS/Linux)
+pip install mediapipe opencv-python numpy scipy
+pip install fastapi uvicorn python-socketio
+pip install tensorflow scikit-learn pillow
+pip install python-dotenv speechrecognition pyperclip
+pip install tensorflow-hub cairosvg imageio
+Step 2 — Build the Hand Tracker
+Give this to the Backend agent in Antigravity:
+PROMPT — ANTIGRAVITY BACKEND AGENT — hand_tracker.py
+Build backend/core/hand_tracker.py for the Phantom Hand system.
+This is the camera and hand detection module. It runs continuously,
+reads frames from the webcam, tracks up to 2 hands using MediaPipe,
+and outputs clean landmark data to the rest of the system.
+EXACT SPECIFICATIONS:
+1. Camera setup:
+   - Open camera device 0 (default webcam)
+   - Capture at 1280x720 resolution, target 30 FPS
+   - Flip frame horizontally (mirror effect so user sees natural reflection)
+2. MediaPipe configuration:
+   - Use mp.solutions.hands
+   - model_complexity = 1 (full model, not lite)
+   - max_num_hands = 2
+   - min_detection_confidence = 0.75
+   - min_tracking_confidence = 0.75
+3. Per-frame output (as a Python dict):
+   {
+     timestamp: float (unix time),
+     hand_count: int (0, 1, or 2),
+     hands: [
+       {
+         hand_id: int,
+         handedness: str ('Left' or 'Right'),
+         confidence: float,
+         landmarks: list of 21 tuples (x, y, z)
+         (x and y normalized 0.0-1.0, z=0 at wrist plane)
+       }
+     ],
+     raw_frame: numpy array (BGR)
+   }
+4. Output mechanism:
+   - Run in a background thread
+   - Push each frame result to a thread-safe queue (max size 3)
+   - Main process reads from queue without blocking camera thread
+5. Performance:
+   - Processing thread must never block the camera capture thread
+   - Reduce to 640x480 for MediaPipe processing, output at 1280x720
+   - Add FPS counter that calculates rolling average over last 30 frames
+6. Error handling:
+   - If camera fails to open: raise CameraNotFoundError with clear message
+   - If frame read fails: skip frame, log to phantom_hand.log, continue
+   - Never crash the system due to a single bad frame
+7. Expose a CameraManager class with methods:
+   - start(): begins capture in background thread
+   - stop(): cleanly shuts down thread and releases camera
+   - get_latest_frame(): returns most recent frame result from queue
+   - get_fps(): returns current FPS as float
+Use Python type hints on all functions.
+Docstrings on every class and method.
+Log all errors to phantom_hand.log.
+Step 3 — Build Kalman Filter Smoother
+JULES TASK — Build this in Google Jules at the same time as Antigravity builds hand_tracker.py:
+JULES TASK: Go to labs.google.com/jules and start a new task with the following prompt:
+PROMPT — JULES — kalman_filter.py
+Build a Python file called kalman_filter.py.
+This implements a Kalman filter to smooth hand landmark coordinates
+from MediaPipe. The purpose is to eliminate jitter (shaking) from
+tracked hand positions so drawing strokes are smooth.
+Requirements:
+1. Class: LandmarkSmoother
+   - Initialize with 21 independent Kalman filters (one per landmark point)
+   - Each Kalman filter tracks x, y, z position + vx, vy, vz velocity
+   - State vector: 6 values [x, y, z, vx, vy, vz]
+   - Measurement vector: 3 values [x, y, z]
+2. Method: smooth(landmarks: list of 21 tuples) -> list of 21 tuples
+   - Takes raw landmark list from MediaPipe
+   - Runs each point through its Kalman filter
+   - Returns smoothed list of 21 (x, y, z) tuples
+3. Method: reset()
+   - Resets all filters (call when hand disappears from frame)
+4. Method: get_velocity(landmark_index: int) -> tuple
+   - Returns current estimated velocity (vx, vy, vz) for a landmark
+   - Used by gesture engine to detect fast vs slow movements
+5. Tuning:
+   - Process noise: small (trust prediction more than measurement)
+   - Measurement noise: medium (webcam data is noisy)
+   - Result should reduce jitter to under 5 pixels on stationary hold
+Use only numpy. No other external dependencies.
+Include full docstrings and type hints.
+Include a simple test at the bottom that runs if __name__ == '__main__'
+to demonstrate smoothing on random noisy data.
+When Jules finishes: download the kalman_filter.py file. In Antigravity, drag it into backend/core/. Then tell the Antigravity Backend agent: 'I have added kalman_filter.py to backend/core/. Review it and confirm it integrates correctly with hand_tracker.py. Fix any import issues.'
+CHECK before moving to Phase 2: Open terminal, navigate to backend/, run: python core/hand_tracker.py — Your webcam should activate. You should see terminal output showing landmark data at 30+ FPS. If FPS is below 20, tell Antigravity: 'FPS is [X]. Optimize the processing pipeline to reach 30 FPS.'
+PHASE 2 — GESTURE RECOGNITION (DAY 6–10)
+All 30 gestures get built here. This is the most time-consuming phase. Budget 5 full days. Split it across Antigravity and Jules running simultaneously.
+Step 1 — Gesture Engine Core (Antigravity)
+PROMPT — ANTIGRAVITY BACKEND AGENT — gesture_engine.py (Part 1 of 2)
+Build backend/core/gesture_engine.py for the Phantom Hand system.
+This is Part 1: the rule-based detection layer.
+CONTEXT: The hand_tracker.py module outputs 21 landmarks per hand as
+normalized (x, y, z) tuples. This module takes those landmarks and
+determines what gesture the user is making.
+PART 1 — RULE-BASED DETECTION:
+1. Build a FingerStateDetector class:
+   - Method: get_finger_states(landmarks) -> dict
+   - Returns: {thumb: bool, index: bool, middle: bool, ring: bool, pinky: bool}
+   - True = finger is extended, False = finger is curled
+   - Thumb: compare tip (landmark 4) X position vs IP joint (landmark 3) X
+   - Other fingers: compare tip Y vs PIP joint Y (tip higher = extended)
+   - Landmark indices: thumb_tip=4, index_tip=8, middle_tip=12, ring_tip=16, pinky_tip=20
+   - Landmark PIP indices: index_pip=6, middle_pip=10, ring_pip=14, pinky_pip=18
+2. Build a GestureDetector class:
+   - Uses FingerStateDetector plus distance and angle calculations
+   - Must detect these gestures by name:
+   DRAW: only index extended, others curled, palm facing camera
+   PRECISION_LINE: index + middle extended, others curled
+   STAMP: thumb + index pinch (distance between tips < 0.04)
+   COLOR_PICK: thumb + index + middle pinch (all three tips within 0.05 of each other)
+   STOP: full fist (all fingers curled), held for 1 second = 30 frames
+   ERASE_H: peace sign (index+middle up) with horizontal wrist velocity
+   ERASE_V: peace sign (index+middle up) with vertical wrist velocity
+   CLEAR_CANVAS: all 5 fingers extended (open palm)
+   CONFIRM: index finger tap (rapid down-up velocity spike on index tip)
+   SHAPE_LOCK: index tip traces a full circle (closed path)
+   UNDO: thumbs up (thumb up, others curled)
+   REDO: thumbs down (thumb down, others curled, hand inverted)
+   SAVE: open palm pushing forward (all extended, Z-velocity negative)
+   COLOR_NEXT: index pointing right + rightward velocity
+   COLOR_PREV: index pointing left + leftward velocity
+   BRUSH_UP: index pointing up + upward velocity
+   BRUSH_DOWN: index pointing down + downward velocity
+   ROTATE_CW: wrist rotate clockwise (angular velocity of palm normal)
+   ROTATE_CCW: wrist rotate counter-clockwise
+   ZOOM_IN: two hands detected, distance between wrists increasing
+   ZOOM_OUT: two hands detected, distance between wrists decreasing
+   AI_MODE: index + pinky extended (horns shape), others curled
+   LETTER_MODE: L-shape = thumb extended right + index extended up
+   VIEW_3D: three fingers (index+middle+ring) swipe upward
+   VIEW_2D: three fingers swipe downward
+   EXPORT: four fingers (index+middle+ring+pinky) tap together
+   VOICE: only pinky extended, others curled
+   COLLAB: two hands, both index fingers pointing toward each other
+   LAYER_CYCLE: wrist tilt side-to-side (roll angle change > 20 degrees)
+   AIR_WRITE: index extended moving slowly (velocity < 0.01/frame)
+3. Gesture State Machine:
+   - States per gesture: IDLE, DETECTING, CONFIRMED, ACTIVE, RELEASED
+   - A gesture must be detected for 3 consecutive frames to CONFIRM
+   - Hold gestures (STOP, AI_MODE) require 30 frames to ACTIVATE
+   - After a gesture RELEASES, 10-frame cooldown before same gesture can trigger again
+   - Two-handed gestures only trigger if both hands are in frame
+4. Output from GestureDetector.process(frame_data) -> dict:
+   {
+     gesture_name: str or None,
+     confidence: float 0.0-1.0,
+     state: str (IDLE/DETECTING/CONFIRMED/ACTIVE/RELEASED),
+     hand_count: int,
+     active_hand: dict (dominant hand landmarks)
+   }
+5. Logging: write every CONFIRMED gesture event to gesture_log.json
+   with timestamp, gesture name, confidence, duration.
+Use Python type hints and docstrings on everything.
+No external ML libraries in this file — pure geometry and physics.
+Step 2 — ML Gesture Classifier (Jules)
+JULES TASK: While Antigravity builds the gesture engine, send this to Jules simultaneously:
+PROMPT — JULES — gesture_classifier training pipeline
+Build a Python file called gesture_trainer.py and a folder called data/gestures/.
+PURPOSE: This creates a machine learning model that recognizes the 30
+gestures for Phantom Hand from hand landmark data.
+Part A — Data Collection Script:
+Build a script that:
+- Opens the webcam using OpenCV
+- Shows the camera feed with landmark overlay
+- Prompts user: 'Recording gesture: [gesture_name]. Hold gesture for 3 seconds.'
+- Records 90 frames of landmark data while user holds the gesture
+- Saves to data/gestures/[gesture_name]_[sample_number].json
+- Repeats for each of the 30 gesture names listed below
+- User presses SPACE to start each recording, ESC to skip
+Gesture names to collect (use these exact strings as filenames):
+DRAW, PRECISION_LINE, STAMP, COLOR_PICK, STOP, ERASE_H, ERASE_V,
+CLEAR_CANVAS, CONFIRM, SHAPE_LOCK, UNDO, REDO, SAVE, COLOR_NEXT,
+COLOR_PREV, BRUSH_UP, BRUSH_DOWN, ROTATE_CW, ROTATE_CCW, ZOOM_IN,
+ZOOM_OUT, AI_MODE, LETTER_MODE, VIEW_3D, VIEW_2D, EXPORT, VOICE,
+COLLAB, LAYER_CYCLE, AIR_WRITE
+Part B — Feature Engineering:
+- For each frame: extract 21 landmarks = 63 floats (x,y,z per point)
+- Normalize all coordinates relative to wrist (landmark 0) and palm width
+- This makes the features hand-size independent
+- Flatten to a single 63-element feature vector
+Part C — Model Training:
+- Load all collected data
+- Split 80/20 train/validation
+- Build TensorFlow model: Input(63) -> Dense(256,relu) -> Dropout(0.3)
+  -> Dense(128,relu) -> Dropout(0.2) -> Dense(30, softmax)
+- Train for 100 epochs with early stopping (patience=10)
+- Target: 97%+ validation accuracy
+- Save model as: backend/models/gesture_classifier.tflite (TFLite format)
+- Save label mapping as: backend/models/gesture_labels.json
+Part D — Inference Class:
+- GestureClassifier class with method:
+  predict(landmarks: list) -> tuple(gesture_name: str, confidence: float)
+- Load .tflite model, run inference, return top prediction
+Use: mediapipe, opencv-python, tensorflow, numpy
+Include docstrings and type hints.
+When Jules finishes: copy gesture_trainer.py into backend/ai/. Copy gesture_classifier training pipeline files to backend/. Tell Antigravity: 'I added gesture_trainer.py from Jules. Review for compatibility and integrate the GestureClassifier output as a confidence-voting second layer in gesture_engine.py.'
+Step 3 — Custom Gesture Trainer UI
+PROMPT — ANTIGRAVITY BACKEND AGENT — gesture_trainer UI mode
+Add a training mode to the Phantom Hand system.
+When the user runs: python backend/gesture_trainer.py
+the system should open the camera and walk the user through
+recording all 30 gestures, 5 samples each (150 total recordings).
+The terminal UI should:
+- Show which gesture is next with a written description of the pose
+- Count down 3-2-1 before recording starts
+- Show a progress bar for the 3-second recording window
+- Confirm 'Saved! [N] samples recorded for [gesture]'
+- After all gestures: automatically run model training and save .tflite
+- Print final accuracy on validation set
+After the user finishes training, the gesture_engine.py should automatically
+detect and load the new model from backend/models/gesture_classifier.tflite.
+Keep camera display simple — just video feed + landmark dots, no heavy graphics.
+CHECK before Phase 3: Run python backend/gesture_trainer.py and record all 30 gestures. After training, test each gesture in front of camera. Gesture name should appear in terminal. If accuracy is below 90%, re-record the failing gestures with more distinct positions.
+PHASE 3 — DRAWING ENGINE & BRUSH SYSTEM (DAY 11–16)
+This is the core creative system. Every stroke, every layer, every brush effect lives in these files.
+Step 1 — Canvas and Stroke System
+PROMPT — ANTIGRAVITY BACKEND AGENT — drawing_engine.py
+Build backend/core/drawing_engine.py for the Phantom Hand system.
+This is the canvas management system. It maintains a stack of layers,
+records strokes, renders the combined output, and handles undo/redo.
+CANVAS ARCHITECTURE:
+1. Layer class:
+   - Each layer is a NumPy array: shape (2160, 3840, 4) — 4K RGBA
+   - Properties: visible (bool), opacity (float 0.0-1.0),
+     blend_mode (str), name (str), locked (bool)
+   - Method: clear() — fills with transparent pixels
+   - Method: get_display_copy(width, height) — returns resized copy for display
+2. Stroke class:
+   - points: list of (x, y, z, timestamp, pressure) tuples
+     (x,y normalized 0-1, pressure from Z-depth 0.0-1.0)
+   - color: (R, G, B, A) tuple
+   - width: float
+   - mode: str (brush mode name)
+   - layer_id: int
+3. DrawingEngine class:
+   - layers: list of Layer objects (max 50 layers)
+   - strokes: list of all completed Stroke objects
+   - current_stroke: Stroke being drawn right now (or None)
+   - active_layer: int (index into layers)
+   - undo_stack: list of canvas snapshots (max 100)
+   - redo_stack: list
+   Methods:
+   - add_layer(name) -> int: adds layer, returns its index
+   - delete_layer(index)
+   - merge_layers(index_a, index_b)
+   - set_layer_opacity(index, opacity)
+   - reorder_layer(from_index, to_index)
+   - toggle_layer_visibility(index)
+   - start_stroke(point, color, width, mode)
+   - add_point_to_stroke(point)
+   - end_stroke(): commits current_stroke to undo stack
+   - undo(): restore previous state
+   - redo()
+   - render(width=1920, height=1080) -> numpy array (BGR):
+     Flatten all visible layers in order, apply blend modes,
+     return the composited frame at display resolution
+   - composite_with_camera(camera_frame, drawing_frame) -> numpy array:
+     Alpha blend drawing over camera at 0.7 camera / 1.0 drawing
+4. Performance:
+   - render() must complete in under 10ms at 1920x1080
+   - Use numpy vectorized operations for all pixel math
+   - Cache the composited result, only re-render when canvas changes
+5. Coordinate system:
+   - All stored points are normalized (0.0-1.0)
+   - Convert to pixel coords only at render time
+   - This allows any canvas resolution without data migration
+Include full type hints and docstrings.
+Step 2 — Motion Smoother
+PROMPT — ANTIGRAVITY BACKEND AGENT — motion_smoother.py
+Build backend/core/motion_smoother.py.
+This module smooths the path of the drawing fingertip before it
+is sent to the drawing engine. Without this, strokes look jagged.
+1. Class: MotionSmoother
+   Method: smooth_point(point: tuple) -> tuple:
+   - Accepts (x, y, z) normalized coordinates
+   - Maintains internal history of last 8 points
+   - Returns Gaussian-weighted average of history
+   - Weights: more recent points weighted higher
+   - Must operate in under 1ms
+   Method: get_bezier_path(points: list) -> list:
+   - Takes list of raw points
+   - Returns much larger list of interpolated points along Bezier curves
+   - Result: smooth curves instead of jagged lines between samples
+   Method: get_velocity(recent_points: list) -> float:
+   - Returns magnitude of movement speed based on last 5 points
+   - Used to determine if user is drawing (deliberate) or hovering (idle)
+   Property: is_deliberate_motion -> bool:
+   - Returns True if current velocity is above threshold 0.003
+   - Drawing only happens when this is True
+   Method: reset():
+   - Clears history (call when hand leaves frame or gesture changes)
+2. Class: VelocityAdaptiveSmoother(MotionSmoother):
+   - Overrides smooth_point to use MORE smoothing when moving fast
+   - Uses LESS smoothing when moving slow (for precision detail work)
+   - This feels like how real pens behave
+Use only numpy. Type hints and docstrings.
+Step 3 — Brush System
+PROMPT — ANTIGRAVITY BACKEND AGENT — brush_system.py
+Build backend/core/brush_system.py for Phantom Hand.
+This module implements all 12 brush modes. Each mode takes a stroke
+object and renders it onto a Layer's numpy array.
+For each brush, build a separate class inheriting from BaseBrush.
+BaseBrush has one abstract method: render(stroke, layer_array) -> None
+Implement all 12 brush classes:
+1. PencilBrush:
+   - cv2.polylines on layer array
+   - Width: 1-3px, antialiasing OFF
+   - Hard, raw edge — exactly like HB pencil
+2. BrushBrush:
+   - Gaussian-blurred filled circles at each point
+   - Width tapers at stroke start and end using velocity
+   - Soft edges via alpha blending
+   - Z-depth modulates width: closer hand = wider stroke
+3. AirbrushBrush:
+   - At each point, scatter N random dots within radius R
+   - N and R increase with Z-depth (pressure)
+   - Each dot has random alpha 30-80%
+   - Result looks like aerosol spray
+4. CalligraphyBrush:
+   - At each point draw an ellipse
+   - Ellipse major axis angle = wrist tilt angle from hand data
+   - Width modulates with stroke speed
+   - Classic calligraphy thick/thin variation
+5. NeonGlowBrush:
+   - Draw three concentric blurred circles at each point:
+     Inner: white, 3px, 100% alpha
+     Middle: chosen color, 8px, 80% alpha
+     Outer: chosen color, 20px, 30% alpha (bloom)
+   - Additive blending (add pixel values, clamp at 255)
+   - Result: glowing neon tube
+6. LaserBrush:
+   - Bright white-hot center (2px, 100%)
+   - Color trail that fades over last 5 recorded points
+   - Chromatic aberration: R channel offset +2px, B channel -2px
+   - Sci-fi energy beam aesthetic
+7. ParticlePenBrush:
+   - At each tracked point, spawn 8 child particles
+   - Each particle has: random velocity, gravity (-0.001 per frame), lifespan 20 frames
+   - Particles rendered as 1-2px dots
+   - Maintain particle simulation state between render calls
+   - Result: drawing leaves sparkle trails
+8. MirrorBrush:
+   - Wrapper that passes each point through another brush
+   - Also sends the mirrored point (1-x, y) to same brush
+   - Optionally also mirrors vertically (x, 1-y)
+   - Property: axis — 'vertical', 'horizontal', 'both'
+9. EraserBrush:
+   - For each point, set pixels within radius R to transparent
+   - Use cv2.circle with alpha=0
+   - Width controlled by brush size setting
+10. CloneStampBrush:
+    - On STAMP gesture: sample 128x128 region around finger position
+    - On DRAW: paste sampled region centered on current finger position
+    - Show ghost outline of sample region as feedback
+11. PatternFillBrush:
+    - On closed stroke: detect enclosed region using cv2.findContours
+    - Tile selected texture image inside region
+    - Available textures: solid, dots, crosshatch, honeycomb, circuit
+12. Ribbon3DBrush:
+    - Width = base_width * (1 + stroke.z_depth)
+    - Draw a trapezoid between consecutive points (not a line)
+    - Left edge is lighter, right edge is darker (simulated lighting)
+    - Creates volumetric tape/ribbon appearance
+BrushRegistry:
+- Dict mapping brush mode name to brush class instance
+- Factory method: get_brush(mode_name) -> BaseBrush
+All classes must have type hints and docstrings.
+All render methods must complete in under 5ms for 1920x1080 canvas.
+CHECK before Phase 4: The drawing system needs a quick test. Ask Antigravity to write a test script that simulates 5 brush strokes on a test canvas for each brush mode and saves the result as test_brushes.png. Open that image. All 12 brushes must look visually distinct from each other.
+PHASE 4 — SHAPE RECOGNITION (DAY 17–21)
+Build this in Jules while Antigravity integrates Phases 1-3. Then import the result.
+JULES TASK: Send the following to Jules while Antigravity does integration work:
+PROMPT — JULES — shape_recognizer.py
+Build backend/core/shape_recognizer.py for the Phantom Hand system.
+PURPOSE: When a user finishes drawing a stroke (detected by STOP gesture),
+this module analyzes the stroke and determines what shape it is.
+If it recognizes a known shape, it returns a clean fitted version.
+INPUT: A list of (x, y) coordinate tuples representing a stroke path.
+OUTPUT: A dict: { shape_name: str, fitted_points: list, confidence: float }
+PROCESSING PIPELINE:
+1. Normalize points to 0-1 space
+2. Resample to exactly 128 evenly-spaced points
+3. Compute: bounding box, centroid, area, perimeter
+4. Compute curvature at each point
+5. Compute convex hull and convexity defects
+6. Simplify with Douglas-Peucker to find vertices
+7. Detect if shape is closed (start/end within 8% of bounding diagonal)
+8. Run shape classifiers in order of specificity
+SHAPE CLASSIFIERS — implement each as a private method returning (bool, float):
+The float is confidence 0.0-1.0.
+Closed shapes:
+_is_circle(points) — radius variance < 12% of mean radius
+_is_ellipse(points) — fitEllipse residual < threshold, not circle
+_is_square(points) — 4 vertices, side ratio within 5%, angles 88-92 deg
+_is_rectangle(points) — 4 vertices, two length pairs, angles 88-92 deg
+_is_triangle_equilateral(points) — 3 vertices, side ratio within 8%
+_is_triangle_right(points) — 3 vertices, Pythagorean check within 5%
+_is_triangle_isosceles(points) — 3 vertices, two equal sides within 8%
+_is_triangle_scalene(points) — 3 vertices, all sides different
+_is_diamond(points) — 4 equal sides, vertex at top, angles not 90
+_is_parallelogram(points) — 2 pairs parallel sides, no right angles
+_is_trapezoid(points) — exactly 1 pair parallel sides
+_is_pentagon(points) — 5 vertices, equal angles
+_is_hexagon(points) — 6 vertices, equal spacing
+_is_octagon(points) — 8 vertices, near-circular bounding
+_is_star_5(points) — 10 vertices alternating convex/concave
+_is_star_6(points) — 12 vertices, dual triangle pattern
+_is_cross(points) — 4 equal arms, orthogonal, equal widths
+_is_spiral(points) — radius increases monotonically along stroke
+_is_crescent(points) — two arcs, one inside other
+_is_heart(points) — two arcs meeting at bottom apex
+Open shapes:
+_is_arc(points) — partial circle fit, angular coverage 30-300 deg
+_is_arrow_single(points) — line + triangular head at one end
+_is_arrow_double(points) — triangular heads at both ends
+_is_s_curve(points) — single inflection point in curvature profile
+_is_line(points) — max deviation from linear fit < 5px equivalent
+Fallback: FREEFORM — returned if no classifier exceeds 0.6 confidence
+FITTED SHAPE OUTPUT:
+For each recognized shape, return geometrically perfect fitted points:
+- CIRCLE: 64-point perfect circle using fitted center and radius
+- RECTANGLE: exactly 4 corner points with right angles
+- TRIANGLE: exactly 3 points fitting the stroke vertices
+- (etc. for all shapes)
+GHOST PREVIEW METHOD:
+get_candidate_preview(partial_stroke) -> dict or None:
+- Called during drawing (before stroke ends)
+- Returns best current guess and fitted points, or None
+- Must complete in under 5ms
+Use: numpy, scipy, opencv-python
+Full type hints and docstrings.
+Include unit tests at bottom that test each shape classifier.
+When Jules finishes: copy shape_recognizer.py to backend/core/. Tell Antigravity Backend agent: 'I added shape_recognizer.py from Jules. Integrate it into the command_router so that when a STOP gesture is detected after drawing, the stroke is passed to shape_recognizer. If a shape is recognized with confidence > 0.65, replace the stroke with the fitted version.'
+PHASE 5 — LETTER & TEXT RECOGNITION (DAY 22–25)
+Step 1 — Letter Recognizer
+PROMPT — ANTIGRAVITY AI AGENT — letter_recognizer.py
+Build backend/core/letter_recognizer.py for the Phantom Hand system.
+PURPOSE: When the user air-writes a letter using the AIR_WRITE gesture,
+this module recognizes what letter/number they drew.
+STEP 1 — TRAINING DATA:
+Download the EMNIST Balanced dataset (free, available via tensorflow_datasets).
+It contains 112,800 samples of handwritten letters and numbers.
+Classes: A-Z uppercase (26) + a-z lowercase (26) = 52 classes
+Wait — use EMNIST ByClass which includes 62 classes (add 0-9 digits).
+STEP 2 — MODEL ARCHITECTURE:
+Build a CNN model using TensorFlow/Keras:
+- Input: (28, 28, 1) grayscale image
+- Conv2D(32, 3x3, relu) + BatchNorm + MaxPool(2x2)
+- Conv2D(64, 3x3, relu) + BatchNorm + MaxPool(2x2)
+- Conv2D(128, 3x3, relu) + BatchNorm
+- GlobalAveragePooling2D
+- Dense(256, relu) + Dropout(0.4)
+- Dense(62, softmax)
+Target validation accuracy: 93%+
+STEP 3 — STROKE TO IMAGE CONVERSION:
+Method: stroke_to_image(stroke_points: list) -> numpy array (28x28):
+- Take list of (x,y) normalized 0-1 points
+- Scale to fit inside 24x24 pixel area (leaving 2px border)
+- Center the scaled stroke in the 28x28 canvas
+- Draw stroke as connected line segments, 2px width
+- Apply Gaussian blur (sigma=0.5) to soften
+- Invert: white stroke on black background
+- Normalize pixel values to 0.0-1.0
+STEP 4 — INFERENCE:
+Class LetterRecognizer:
+  __init__: loads .tflite model from backend/models/letter_recognition.tflite
+  predict(stroke_points) -> list of (char, confidence) — top 5 candidates
+  is_confident(predictions) -> bool — True if top prediction > 0.70
+STEP 5 — WORD BUILDER:
+Class WordBuilder:
+  - Maintains current text buffer (list of confirmed chars)
+  - Method: add_char(char) — append to buffer
+  - Method: backspace() — remove last char
+  - Method: add_space() — append space
+  - Method: get_text() -> str
+  - Method: clear()
+  - Method: get_gemini_corrected(gemini_client) -> str:
+    sends current text to Gemini with prompt:
+    'The following text was air-written with possible recognition errors.
+     Correct it to the most likely intended word or phrase: [text]'
+    returns corrected string
+Export model to TFLite after training.
+Save to backend/models/letter_recognition.tflite
+Save label map to backend/models/letter_labels.json
+Include training script that runs automatically if model file is missing.
+Full type hints and docstrings.
+CHECK: After training completes, test by running the letter recognizer on 10 letters from command line. If accuracy feels low on specific letters, tell Antigravity: 'Letter X is frequently misrecognized as Y. Add data augmentation for that class and retrain.'
+PHASE 6 — BACKEND SERVER & API (DAY 26–28)
+PROMPT — ANTIGRAVITY BACKEND AGENT — app.py (FastAPI Server)
+Build backend/app.py — the main server for Phantom Hand.
+This is the FastAPI server that connects everything:
+- Receives camera frames from the tracking pipeline
+- Sends processed frames + gesture data to the browser via WebSocket
+- Handles export requests, save/load, and collaboration
+FRAMEWORK: FastAPI + python-socketio + uvicorn
+WEBSOCKET EVENTS (server → browser):
+  'frame' — sends { image: base64_jpeg, gesture: str, fps: float,
+                     hands: list, canvas_state: dict }
+  'shape_detected' — sends { shape: str, fitted_points: list }
+  'letter_detected' — sends { candidates: list, buffer: str }
+  'ai_suggestion' — sends { text: str, overlay_points: list }
+  'layer_update' — sends { layers: list }
+  'collab_stroke' — sends { user_id: str, stroke: dict, color: str }
+WEBSOCKET EVENTS (browser → server):
+  'gesture_confirm' — user confirmed shape or letter
+  'export_request' — { format: str, filename: str }
+  'layer_action' — { action: str, params: dict }
+  'join_room' — { room_code: str }
+  'host_room' — {} (generates and returns room_code)
+  'stroke_update' — collaboration stroke data
+REST ENDPOINTS:
+  GET /health — returns system status JSON
+  GET /frame — latest frame as JPEG (fallback for WebSocket)
+  POST /export — trigger export, returns file path
+  GET /canvas — current canvas state as JSON
+  POST /ai/complete — trigger Gemini drawing completion
+  POST /ai/style — trigger style transfer
+MAIN LOOP:
+- On server start, launch CameraManager in background thread
+- Every frame: run tracking → gesture → drawing pipeline
+- JPEG encode at 80% quality
+- Emit 'frame' event to all connected clients
+- Target: complete pipeline in under 33ms (30fps)
+STARTUP:
+- Load all models (gesture, letter) at startup
+- Verify camera is accessible
+- Log startup time to phantom_hand.log
+- Print to console: 'PHANTOM HAND online. Open http://localhost:8000'
+COLLABORATION:
+- Room manager: dict of room_code -> list of socket_ids
+- When stroke arrives from user A, broadcast to all others in room
+- Max 4 users per room
+- Room auto-deletes when empty
+Error handling on every endpoint. Full type hints and docstrings.
+PHASE 7 — AI INTEGRATION (DAY 29–33)
+Do the AI Studio work BEFORE asking Antigravity to build this phase. Your prompts must be tested and working before they go into code.
+Step 1 — Design Prompts in AI Studio First
+AI STUDIO TASK: Go to aistudio.google.com before starting this phase. You need to test 4 prompts and find the exact wording that gives the best results from Gemini. For each prompt below, test it in AI Studio, adjust it until the output is what you want, then write down the final working version.
+Prompt A — Drawing Completion
+Test in AI Studio with a sample image of a partial drawing. Goal: get Gemini to describe specifically how to complete it.
+PROMPT — AI STUDIO TEST — Drawing Completion Prompt
+SYSTEM: You are a drawing completion assistant for Phantom Hand,
+an AI gesture interface system. Analyze partial hand-drawn sketches
+and suggest completions in structured JSON format only.
+USER: [IMAGE attached — partial drawing]
+Analyze this partial sketch. Return ONLY valid JSON in this format:
+{
+  'object_name': 'what this drawing is most likely becoming',
+  'confidence': 0.0-1.0,
+  'completion_strokes': [
+    { 'description': 'what to draw', 'start': [x,y], 'end': [x,y] }
+  ],
+  'suggested_colors': ['#hexcode'],
+  'style_note': 'one sentence about the drawing style'
+}
+Return ONLY the JSON. No explanation. No markdown.
+Prompt B — Air-Text Correction
+PROMPT — AI STUDIO TEST — Air Text Correction Prompt
+SYSTEM: You are a text correction assistant for a hand gesture
+air-writing system. Users write letters in the air with their finger.
+Recognition is imperfect. Correct the text to the most likely
+intended word or sentence. Return ONLY the corrected text string.
+No explanation. No punctuation changes unless clearly intended.
+USER: Correct this air-written text: [RAW_TEXT]
+Prompt C — Drawing Style Analysis
+PROMPT — AI STUDIO TEST — Style Analysis Prompt
+SYSTEM: You analyze drawings for the Phantom Hand gesture system.
+Return structured JSON only. No markdown. No explanation.
+USER: [IMAGE attached — finished drawing]
+Analyze this drawing and return:
+{
+  'style': 'detected artistic style',
+  'complexity': 'simple/medium/complex',
+  'dominant_shapes': ['shape1', 'shape2'],
+  'color_palette_suggestion': ['#hex1', '#hex2', '#hex3'],
+  'composition_note': 'one specific improvement suggestion'
+}
+After testing all 3 prompts and getting good results in AI Studio, paste the final working versions into the next Antigravity prompt below.
+Step 2 — Build Gemini Client
+PROMPT — ANTIGRAVITY AI AGENT — gemini_client.py
+Build backend/ai/gemini_client.py for the Phantom Hand system.
+This wraps the Gemini API and handles all AI features.
+Use the token_manager.py already built for API key rotation.
+Use: google-generativeai Python SDK
+Install: pip install google-generativeai
+Class GeminiClient:
+Method: complete_drawing(image_bytes: bytes) -> dict:
+  - Sends image to gemini-1.5-pro-latest (vision model)
+  - Uses the drawing completion prompt (I will provide it separately)
+  - Parses JSON response, returns as Python dict
+  - On JSON parse failure: return { 'error': 'parse_failed', 'raw': response }
+  - Timeout: 10 seconds
+Method: correct_air_text(raw_text: str) -> str:
+  - Sends text to gemini-1.5-flash (fast model, no image needed)
+  - Returns corrected string
+  - Timeout: 3 seconds
+Method: analyze_style(image_bytes: bytes) -> dict:
+  - Sends image to gemini-1.5-pro-latest
+  - Returns style analysis dict
+  - Timeout: 10 seconds
+Method: interpret_command(text: str) -> dict:
+  - For unrecognized voice/text commands
+  - Returns { 'action': str, 'params': dict } or { 'action': 'unknown' }
+  - Uses: 'Map this to a Phantom Hand command: [text]'
+  - Timeout: 5 seconds
+All methods must be async (async def).
+All methods use token_manager.get_available_key().
+On rate limit (HTTP 429): call token_manager.report_rate_limit(), retry once.
+All errors logged to phantom_hand.log.
+Never raise exceptions to caller — always return error dict instead.
+Type hints and docstrings on everything.
+PHASE 8 — FRONTEND HUD INTERFACE (DAY 34–40)
+This is where the project becomes visually unique. The design system below is non-negotiable. No generic UI elements.
+Unique Design Specification — Mandatory
+This is what separates Phantom Hand from every open-source demo. Every decision below was made specifically for this project:
+DESIGN ELEMENT
+SPECIFICATION
+Background
+#050A14 — deep navy-black. Not pure black. This creates depth and allows dark overlays.
+Primary Color
+#00E5FF — electric cyan. Used for: active state, borders, data readings, highlights.
+Accent Color
+#FFD700 — gold. Used ONLY for: warnings, labels, phase indicators. Maximum 15% of screen area.
+Structural Color
+#0D47A1 — dark electric blue. Used for: panel backgrounds, inactive borders.
+Text Color
+#E8F4FD — almost white with blue tint. Never pure white — it reads as cheaper.
+Font
+Share Tech Mono (Google Font, free). Every single text element. No exceptions. Monospace only.
+Corners
+ZERO border-radius on any element. Everything is strict rectangles. The one exception: the circular radar sweep animation.
+Borders
+1px solid #0D2137 everywhere. On hover: 1px solid #00E5FF with box-shadow 0 0 8px #00E5FF40.
+Animations
+All transitions: 150ms linear. No easing curves. Linear only — it feels mechanical, not organic.
+Scan Lines
+CSS animation: horizontal lines moving top to bottom at 3% opacity. Always running on main bg.
+Corner Brackets
+Every panel has corner SVG brackets: ◤ top-left, ◥ top-right, ◣ bottom-left, ◢ bottom-right in cyan.
+Numbers
+All displayed numbers zero-padded (001, not 1). FPS shown as 030.0, not 30.
+Cursor
+Hidden. No mouse cursor visible at all. The hand IS the cursor. CSS: cursor: none on body.
+Loading States
+Blinking underscore character _ at 600ms interval. No spinners. No progress bars.
+Step 1 — React Project Setup
+PROMPT — TERMINAL — Frontend setup
+cd phantom-hand/frontend
+npx create-react-app . --template typescript
+npm install socket.io-client three @types/three
+npm install @google/generative-ai
+Step 2 — Build the HUD
+PROMPT — ANTIGRAVITY FRONTEND AGENT — Full HUD Application
+Build the complete frontend React application for Phantom Hand.
+DESIGN SYSTEM — NON-NEGOTIABLE:
+Import 'Share Tech Mono' from Google Fonts in index.html.
+All CSS uses these exact variables:
+  --bg: #050A14
+  --primary: #00E5FF
+  --accent: #FFD700
+  --structure: #0D47A1
+  --text: #E8F4FD
+  --border: #0D2137
+  --dim: #4A7FA5
+No border-radius anywhere. cursor: none on body.
+font-family: 'Share Tech Mono', monospace — all text.
+LAYOUT — Fixed position grid, no scrolling, no overflow:
+TOP-LEFT PANEL (position: fixed, top:16px, left:16px, width:280px):
+  Title: PHANTOM HAND  (1.4rem, --primary)
+  Below: STATUS: ONLINE  (0.75rem, blinking --primary dot)
+  Below: FPS: 030.0  (updates every 500ms)
+  Below: CAM: 1280x720  (static after init)
+  Below: MODE: [current gesture mode]  (updates live)
+[... (rest of the prompt for frontend continues)]

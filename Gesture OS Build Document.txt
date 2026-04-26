@@ -1,0 +1,558 @@
+PHANTOM HAND
+GESTURE INTERFACE OPERATING SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ MASTER BUILD DOCUMENT // FULL SYSTEM ARCHITECTURE // ZERO COST AI-POWERED • KEYBOARD-FREE • JARVIS-CLASS • FULLY EXCLUSIVE
+| TOTAL PHASES | BUILD DAYS | COST |  | :--- | :--- | :--- | | 10 | 60+ | $0.00 |
+01 // PROJECT IDENTITY
+Codename: PHANTOM HAND
+Classification: Personal Vision Project — Keyboard-Free Gesture OS
+▸ Vision Statement
+A zero-keyboard, zero-mouse operating interface where every action — drawing, navigating, executing commands, interacting with AI — is performed through precise hand gestures captured by a standard webcam.
+Think less 'art app' and more 'operating system layer' that sits on top of your screen.
+The aesthetic is cold, clinical, and inhuman — holographic HUD elements, real-time data streams, glowing overlays — the kind of interface that makes people think a machine is watching them, not helping them.
+▸ Core Philosophy
+No keyboard. No mouse. No touch. Hands only.
+No generic UI. Every pixel is custom-designed.
+No limitations. Shape recognition, letter recognition, AI completion, voice fallback.
+No cost. 100% free stack. Antigravity + Gemini tokens as the only 'paid' resource.
+No imitation. No template cloning. Every feature engineered from scratch.
+▸ Inspiration Architecture
+JARVIS: Proactive AI overlay, voice-command fallback, real-time data display
+FRIDAY: Gesture-driven task execution, contextual awareness, command routing
+EDITH: Tactical interface mode, target locking, precision gesture mapping
+Minority Report: Physical gesture as primary navigation paradigm
+Unique Layer: Air-written text converted to real OS commands via Gemini interpretation
+02 // COMPLETE FEATURE REGISTRY
+▸ GESTURE LIBRARY — 30 GESTURES MINIMUM
+◆ Drawing & Creation Gestures
+[01] Index finger extended, others curled — Primary draw stroke
+[02] Index + Middle extended, moving — Precision line draw mode
+[03] Thumb + Index pinch, slow close — Stamp shape at current location
+[04] Thumb + Index + Middle pinch — Pick color from screen pixel
+[05] Fist fully closed, held 1 second — Stop / End stroke
+[06] Peace sign moving left-right — Horizontal erase sweep
+[07] Peace sign moving up-down — Vertical erase sweep
+[08] Spread all five fingers wide — Full canvas clear with animation
+[09] Index finger double-tap in air — Confirm / Accept current shape autocomplete
+[10] Circle drawn with index in air — Activate shape-lock circle mode
+◆ Navigation & Control Gestures
+[11] Thumbs up — Undo last stroke
+[12] Thumbs down — Redo last undone stroke
+[13] Open palm push forward — Save canvas state to disk
+[14] Index pointing right, swipe — Next color in palette
+[15] Index pointing left, swipe — Previous color in palette
+[16] Index pointing up — Increase brush size
+[17] Index pointing down — Decrease brush size
+[18] Hand rotate clockwise — Rotate 3D view clockwise
+[19] Hand rotate counter-clockwise — Rotate 3D view counter-clockwise
+[20] Two hands spread apart — Zoom in on canvas
+◆ System & AI Gestures
+[21] Two hands move together — Zoom out on canvas
+[22] Index + Pinky extended (horns) — Activate AI completion mode
+[23] L-shape with thumb + index — Trigger letter recognition on selected area
+[24] Three fingers swipe up — Switch to 3D view mode
+[25] Three fingers swipe down — Switch to 2D flat mode
+[26] Four fingers tap together — Open export menu
+[27] Pinky only extended — Activate voice command window
+[28] Both index fingers point at each other — Activate collaboration mode
+[29] Wrist tilt left-right — Cycle through active layers
+[30] Index draw letter in air — Air-write to text conversion mode
+▸ SHAPE RECOGNITION — 25 SHAPES
+◆ Basic Geometric Shapes
+Circle — Detect by radius variance < 15% threshold
+Ellipse — Detect by semi-axis ratio and perimeter approximation
+Square — Equal side length detection with corner angle analysis
+Rectangle — Aspect ratio detection with corner orthogonality check
+Triangle (equilateral) — Equal side lengths + 60 degree angle detection
+Triangle (right-angle) — Pythagorean ratio check on fitted polygon
+Triangle (isosceles) — Two equal sides + apex angle detection
+Triangle (scalene) — All-different-sides classification by exclusion
+◆ Polygon Shapes
+Diamond / Rhombus — Equal sides, non-right angles, vertex at top
+Parallelogram — Parallel sides, non-right angles, vertex detection
+Trapezoid — One pair of parallel sides, others divergent
+Pentagon (regular) — 5-vertex fitting with equal angle check
+Hexagon (regular) — 6-vertex fitting, honeycomb symmetry
+Octagon — 8-vertex polygon fitting, near-circular bounding box
+Star (5-point) — Alternating convex/concave vertex pattern
+Star (6-point) — David star pattern via dual-triangle overlay
+Cross / Plus — Four-arm orthogonal shape with equal arm widths
+◆ Curved and Advanced Shapes
+Spiral — Expanding radius detection over stroke arc length
+Arc / Semicircle — Partial circle via angular coverage < 300 degrees
+Crescent — Overlapping arc subtraction pattern
+Heart — Dual-arc convergence at bottom apex
+Arrow (single) — Line with triangular head, direction vector extracted
+Arrow (double) — Two heads, opposite direction, shared shaft
+Bezier curve (S-curve) — Inflection point detection on stroke path
+Freeform — Fallback for unrecognized strokes, stored as smooth path
+▸ DRAWING MODES
+Pencil — Sharp 1-3px line, no smoothing, pixel-accurate
+Brush — Pressure-sensitive via Z-depth, tapered ends, soft edges
+Airbrush — Gaussian scatter distribution around finger point
+Calligraphy — Angle-sensitive width modulation via wrist tilt
+Neon Glow — Bloom post-processing with chromatic intensity mapping
+Laser — Bright center with rapid fade trail, sci-fi aesthetic
+Particle Pen — Each point emits N particles with velocity + gravity simulation
+Mirror Mode — Symmetrical drawing on vertical and/or horizontal axis
+Eraser — Hard circle erase with collision detection on stroke segments
+Clone Stamp — Copies region of canvas to new stroke position
+Pattern Fill — Flood fill from closed shape with selected texture
+3D Ribbon — Stroke has visible depth based on Z-axis displacement of hand
+▸ CANVAS SYSTEM
+Unlimited layer stack — Add, delete, merge, reorder, toggle visibility
+Per-layer opacity control via air-swipe gesture
+Layer blend modes — Normal, Multiply, Screen, Overlay, Add
+Canvas resolution — Up to 4K (3840x2160) offline, 1920x1080 real-time
+Infinite canvas with gesture-controlled pan and zoom
+Canvas grid overlay — Square, dot, isometric options
+Perspective guides — Vanishing point placement via gesture
+Canvas history — 100 undo steps stored in RAM
+Named save states — Snapshot canvas at any point with gesture
+▸ EXPORT SYSTEM
+PNG — Full resolution, transparent background option
+SVG — Vector format, infinite scaling, all strokes as paths
+PDF — Print-ready, embedded fonts, layer flattening
+GIF — Animated drawing playback, configurable FPS and loop
+MP4 — HD video of drawing process from frame 0 to completion
+OBJ — 3D mesh export for 3D-mode drawings
+JSON — Raw stroke data export for external processing
+WebP — Compressed web format with transparency
+03 // SYSTEM ARCHITECTURE
+▸ Technology Stack — 100% Free
+| LAYER | TECHNOLOGY | PURPOSE |  | :--- | :--- | :--- | | Camera Input | OpenCV 4.x | Frame capture, color space conversion |  | Hand Detection | MediaPipe Hands | 21-landmark real-time tracking |  | Gesture ML | TensorFlow Lite | Custom gesture classifier inference |  | Shape Fitting | NumPy + SciPy | Geometric curve fitting algorithms |  | Letter OCR | EMNIST + CNN | Air-written character recognition |  | Signal Smoothing | Kalman Filter | Jitter elimination, prediction |  | Drawing Engine | OpenCV + NumPy | Canvas management, stroke rendering |  | 3D Rendering | Three.js (browser) | WebGL 3D scene, orbit controls |  | Backend Server | FastAPI (Python) | WebSocket, REST API, async |  | Frontend UI | React + Tailwind | HUD interface, overlay controls |  | Real-time Comms | Socket.IO | Sub-50ms frame streaming |  | AI Completion | Gemini 3.1 Pro API | Drawing interpretation, completion |  | Voice Control | SpeechRecognition | Fallback command layer |  | Style Transfer | TF Hub Magenta | Artistic filter application |  | Collaboration | Socket.IO rooms | Multi-user shared canvas |  | Deployment | Docker + Render | Free-tier containerized hosting |
+▸ Data Flow Architecture CAMERA → FRAME BUFFER → MEDIAPIPE → LANDMARK ARRAY → GESTURE ENGINE → COMMAND ROUTER → [DRAWING ENGINE / AI MODULE / VOICE MODULE / EXPORT ENGINE] → CANVAS STATE → WEBSOCKET → BROWSER RENDERER → HUD OVERLAY → DISPLAY
+▸ Complete Project File Tree
+Plaintext
+phantom-hand/ [cite: 128]├── backend/ [cite: 129]│   ├── app.py                    FastAPI server, WebSocket hub [cite: 130]│   ├── core/ [cite: 131]│   │   ├── hand_tracker.py       MediaPipe pipeline, landmark extraction [cite: 132]│   │   ├── gesture_engine.py     30-gesture recognition and routing [cite: 133]│   │   ├── kalman_filter.py      Landmark smoothing and prediction [cite: 134]│   │   ├── drawing_engine.py     Canvas, layers, stroke management [cite: 135]│   │   ├── brush_system.py       All 12 drawing modes [cite: 136]│   │   ├── shape_recognizer.py   25-shape detection and fitting [cite: 137]│   │   ├── letter_recognizer.py  EMNIST CNN, stroke-to-image pipeline [cite: 138]│   │   ├── motion_smoother.py    Gaussian smoothing, Bezier interpolation [cite: 139]│   │   ├── command_router.py     Maps gestures to system actions [cite: 140]│   │   └── layer_manager.py      Layer stack, blend modes, opacity [cite: 141]│   ├── ai/ [cite: 142]│   │   ├── gemini_client.py      Gemini API wrapper, token rotation [cite: 143]│   │   ├── drawing_completer.py  Partial drawing interpretation + suggest [cite: 144]│   │   ├── style_transfer.py     TF Hub Magenta integration [cite: 145]│   │   ├── gesture_trainer.py    Custom gesture recording + training [cite: 146]│   │   └── token_manager.py      10-account rotation, rate limit handler [cite: 147]│   ├── utils/ [cite: 148]│   │   ├── voice_controller.py   SpeechRecognition + command parser [cite: 149]│   │   ├── exporter.py           PNG/SVG/GIF/MP4/OBJ/JSON/WebP [cite: 150]│   │   ├── performance_monitor.py FPS, latency, CPU/RAM tracking [cite: 151]│   │   ├── camera_manager.py     Multi-camera support, resolution config [cite: 152]│   │   └── collaboration.py      Multi-user room management [cite: 153]│   ├── models/ [cite: 154]│   │   ├── gesture_classifier.tflite  Trained gesture model [cite: 155]│   │   ├── letter_recognition.h5      EMNIST character model [cite: 156]│   │   └── shape_templates.pkl        Shape template library [cite: 157]│   └── requirements.txt [cite: 158]├── frontend/ [cite: 159]│   ├── src/ [cite: 160]│   │   ├── components/ [cite: 161]│   │   │   ├── HUDOverlay.jsx         Main Iron Man-style HUD [cite: 162]│   │   │   ├── VideoFeed.jsx          Camera feed with overlays [cite: 163]│   │   │   ├── DrawingCanvas.jsx       Drawing surface renderer [cite: 164]│   │   │   ├── GestureIndicator.jsx    Live gesture feedback panel [cite: 165]│   │   │   ├── LayerPanel.jsx          Layer stack control [cite: 166]│   │   │   ├── ColorOrb.jsx            Gesture-controlled color picker [cite: 167]│   │   │   ├── BrushSelector.jsx       Mode switching via gesture [cite: 168]│   │   │   ├── AIPanel.jsx             Gemini suggestions display [cite: 169]│   │   │   ├── VoiceWave.jsx           Voice command visualizer [cite: 170]│   │   │   ├── ExportMenu.jsx          Export format selector [cite: 171]│   │   │   ├── CollaborationPanel.jsx  Multi-user cursor overlay [cite: 172]│   │   │   ├── PerformanceHUD.jsx      FPS + latency display [cite: 173]│   │   │   ├── HandSkeleton.jsx        Real-time landmark visualizer [cite: 174]│   │   │   ├── ShapePreview.jsx        Autocomplete shape ghost [cite: 175]│   │   │   └── OnboardingSequence.jsx  First-run gesture tutorial [cite: 176]│   │   ├── hooks/ [cite: 177]│   │   │   ├── useSocket.js [cite: 178]│   │   │   ├── useGesture.js [cite: 179]│   │   │   ├── useDrawing.js [cite: 180]│   │   │   ├── use3DScene.js [cite: 181]│   │   │   └── useVoice.js [cite: 182]│   │   ├── three/ [cite: 183]│   │   │   ├── Scene3D.js             Three.js scene setup [cite: 184]│   │   │   ├── StrokeRenderer3D.js    3D stroke to mesh [cite: 185]│   │   │   └── HandVisualizer3D.js    3D hand skeleton overlay [cite: 186]│   │   └── App.jsx [cite: 187]├── tests/ [cite: 188]│   ├── unit/                      Pytest for all core modules [cite: 189]│   ├── integration/               WebSocket + API tests [cite: 190]│   └── visual/                    Selenium browser automation [cite: 191]├── docker/ [cite: 192]│   ├── Dockerfile [cite: 193]│   └── docker-compose.yml [cite: 194]├── docs/ [cite: 195]│   ├── GESTURE_REFERENCE.md [cite: 196]│   ├── API_DOCS.md [cite: 197]│   └── USER_GUIDE.md [cite: 198]└── README.md [cite: 199]
+04 // PHASE-BY-PHASE BUILD PLAN
+| PHASE 0 | ENVIRONMENT & FOUNDATION SETUP | TIMELINE: Day 1–2 |  | :--- | :--- | :--- | | Focus | Zero coding. Pure infrastructure. Nothing runs until the foundation is correct. | |
+◆ Antigravity IDE Configuration
+Download and install Antigravity from antigravity.google.com
+Sign in with primary Google account, activate Gemini 3.1 Pro
+Create rotation script to cycle through all 10 Google accounts
+Configure Agent Manager to 'Agent-Assisted' mode — you stay in control
+Set terminal policy to Auto for standard commands
+Create phantom-hand/ workspace folder
+Set up 5 dedicated agent slots: Backend, Frontend, AI, Testing, DevOps
+◆ Development Environment
+Python 3.11+ — Install and verify
+Node.js 20 LTS — Install and verify
+Git — Initialize repository
+Docker Desktop — Install for future deployment
+Test webcam access via Python OpenCV one-liner
+Create Python virtual environment inside project folder
+Install all Python dependencies — full requirements.txt
+Install all Node.js dependencies — full package.json
+Verify GPU detection — CUDA if available, CPU fallback
+◆ Account Rotation Infrastructure
+Create token_manager.py — stores all 10 API keys in .env
+Build round-robin selector with rate limit detection
+Test token switching — verify zero downtime between accounts
+Log token usage per account to avoid silent limits
+| PHASE 1 | CORE HAND TRACKING ENGINE | TIMELINE: Day 3–5 |  | :--- | :--- | :--- | | Focus | The foundation everything else is built on. Must achieve 30+ FPS before advancing. | |
+◆ MediaPipe Pipeline
+Initialize MediaPipe Hands with model_complexity=1 (full, not lite)
+Set max_num_hands=2 — always track both hands
+Set min_detection_confidence=0.75 and min_tracking_confidence=0.75
+Capture BGR frame from webcam, flip horizontally for mirror effect
+Convert BGR to RGB before passing to MediaPipe
+Extract all 21 landmark (x, y, z) tuples per detected hand
+Extract handedness classification — Left or Right label
+Extract per-hand confidence score
+◆ Kalman Filter Smoother
+Implement Kalman filter for each of the 21 landmark points independently
+State vector: position (x, y, z) + velocity (vx, vy, vz)
+Tune process noise and measurement noise matrices
+Result: sub-5px jitter on stable held positions
+Implement velocity threshold — only activate drawing when velocity is deliberate
+◆ Performance Optimization
+Target: 30 FPS minimum on standard laptop webcam (no GPU required)
+Run MediaPipe processing on separate thread with queue
+Reduce tracking resolution to 640x480, display at 1280x720
+Profile and eliminate all blocking calls in main loop
+Implement FPS counter — display in HUD at all times
+◆ Hand Data Output Schema
+Each frame outputs: timestamp, hand_count, [hand_id, handedness, confidence, landmarks[21]]
+Landmarks normalized 0.0-1.0 on both axes
+Z-axis: 0 = wrist plane, negative = closer to camera
+Output continuously to gesture engine via internal queue
+| PHASE 2 | GESTURE RECOGNITION SYSTEM | TIMELINE: Day 6–10 |  | :--- | :--- | :--- | | Focus | All 30 gestures. No approximation. Each gesture triggers one and only one action. | |
+◆ Rule-Based Gesture Layer (First Pass)
+Build finger state detector — for each finger: extended or curled
+Thumb uses X-axis comparison (tip vs IP joint)
+Index through Pinky use Y-axis comparison (tip vs PIP joint)
+Compute Euclidean distance between all relevant tip pairs
+Compute wrist-to-fingertip vectors for direction analysis
+Compute palm normal vector for palm facing direction
+Build gesture state machine — debounce each gesture for 3 consecutive frames
+Implement gesture cooldown — prevent accidental rapid retriggering
+◆ Machine Learning Gesture Layer (Second Pass)
+Collect training data — 150 samples per gesture x 30 gestures = 4,500 samples
+Record in-app using a data collection mode (gesture hold = record)
+Feature engineering — flatten 21 landmarks to 63 floats, normalize by palm size
+Train TensorFlow Lite classification model — 3-layer MLP
+Target accuracy: 97%+ on validation set
+Export to .tflite and deploy in real-time pipeline
+Rule-based and ML outputs combined via confidence voting
+◆ Gesture State Machine
+States: IDLE → DETECTING → CONFIRMED → ACTIVE → RELEASED
+Transitions require N consecutive frames in same gesture class
+Hold-triggered gestures require 30-frame hold (1 second at 30fps)
+Swipe gestures require velocity vector in correct direction
+Two-handed gestures only trigger if both hands are in frame
+Log all gesture events with timestamp to gesture_log.json
+◆ Custom Gesture Trainer
+Build in-app UI mode: record your own gesture
+User holds gesture for 3 seconds — 90 frames captured automatically
+System trains mini-model on new gesture + existing library
+Export custom gesture pack as JSON — shareable with others
+| PHASE 3 | DRAWING ENGINE & BRUSH SYSTEM | TIMELINE: Day 11–16 |  | :--- | :--- | :--- | | Focus | Where physics meets aesthetics. Every brush mode must feel physically distinct. | |
+◆ Canvas Architecture
+Infinite canvas with 4K backing store (3840x2160 NumPy array)
+Viewport: 1920x1080 window into canvas, pan/zoom adjustable
+Per-layer canvas arrays — each layer is independent NumPy array
+Layer compositing on render — flatten only for display, not storage
+Stroke object: points[], color, width, mode, timestamp, layer_id
+Full undo/redo stack — 100 steps in memory, overflow to disk
+◆ Motion Smoothing
+Gaussian-weighted moving average over last 8 tracked points
+Bezier curve interpolation between spaced points
+Velocity-adaptive smoothing — faster gesture = more smoothing
+Minimum inter-point distance threshold — avoid point clouds on slow strokes
+◆ All 12 Brush Modes — Implementation Details
+PENCIL — OpenCV polylines, width 1-3px, no anti-aliasing, raw edge
+BRUSH — Gaussian-blurred circles at each point, tapered using velocity
+AIRBRUSH — Random scatter of N dots within radius R of finger, density = pressure
+CALLIGRAPHY — Angle-sensitive width modulation via wrist tilt
+NEON GLOW — Three layered circles: core white, mid color, outer bloom with alpha blend
+LASER — Bright center with rapid fade trail, sci-fi aesthetic
+PARTICLE PEN — Each tracked point spawns 8 particles with random velocity + gravity
+MIRROR — Duplicate every point across one or both symmetry axes in real-time
+ERASER — Circular collision on all stroke segments in bounding box, remove intersects
+CLONE STAMP — Sample 64x64 region on pinch, paste at current position on draw
+PATTERN FILL — Flood fill from closed shape with selected texture tile
+3D RIBBON — Stroke has visible depth based on Z-depth of hand
+◆ Real-Time Rendering Pipeline
+Draw to offscreen buffer, composite with camera frame via alpha blend
+Camera frame opacity: 60% — drawing opacity: 100%
+Target render latency: under 16ms (1 frame at 60fps)
+JPEG encode at 85% quality for WebSocket transmission
+Only transmit delta regions when possible to reduce bandwidth
+| PHASE 4 | SHAPE RECOGNITION SYSTEM | TIMELINE: Day 17–21 |  | :--- | :--- | :--- | | Focus | 25 shapes. Detect, snap, and render clean geometry from freehand gestures. | |
+◆ Detection Pipeline
+Stroke is analyzed on fist-close gesture (end of stroke)
+Normalize stroke points to 0-1 coordinate space
+Resample stroke to uniform 128 points for consistent analysis
+Compute bounding box, centroid, area, perimeter
+Compute curvature profile along stroke length
+Compute convex hull and convexity defects
+Compute vertex candidates using Douglas-Peucker simplification
+◆ Shape Classification Logic
+CLOSED SHAPE DETECTION — start and end point within 10% of bounding box diagonal
+CIRCLE — Radius coefficient of variation < 12% across all centroid distances
+ELLIPSE — Fit ellipse via OpenCV fitEllipse, check residual error
+SQUARE — 4 corners, equal sides within 5%, all angles 88-92 degrees
+RECTANGLE — 4 corners, two pairs of equal sides, all angles 88-92 degrees
+TRIANGLE (all types) — 3 corners, classify by side ratios and angles
+DIAMOND — 4 equal sides, vertex at topmost point, angles not 90 degrees
+PARALLELOGRAM — 2 pairs parallel sides, no right angles
+TRAPEZOID — 1 pair parallel, 1 pair divergent sides
+PENTAGON — 5-vertex polygon fit, equal angle check
+HEXAGON — 6-vertex polygon fit, regular spacing check
+OCTAGON — 8-vertex polygon fit, near-circular bounding
+STAR (5pt) — 10-vertex alternating pattern, concave defect detection
+STAR (6pt) — 12-vertex dual-triangle interference pattern
+CROSS — 4 arms extending from center, orthogonal vectors
+SPIRAL — Continuously expanding radius over stroke progression
+ARC — Partial circle fit, angular coverage 30-300 degrees
+CRESCENT — Two arcs, inner arc subtract from outer arc
+HEART — Dual bezier arcs converging at bottom point
+ARROW (single) — Line + triangular cap, direction vector extracted
+ARROW (double) — Two caps on single shaft
+S-CURVE — Single inflection point detected in curvature profile
+LINE — Maximum deviation from best-fit line < 5px
+FREEFORM — Fallback, store as smooth Bezier approximation
+◆ Autocomplete Ghost Preview
+As stroke is drawn, show ghost preview of best candidate shape in real-time
+Ghost rendered in 30% opacity CYAN color
+If user closes fist — snap to clean shape
+If user continues drawing — ghost disappears, freeform continues
+| PHASE 5 | LETTER & TEXT RECOGNITION | TIMELINE: Day 22–25 |  | :--- | :--- | :--- | | Focus | Air-write letters A-Z, a-z, 0-9. Single stroke. Instant recognition. | |
+◆ Input Pipeline
+Activated by horns gesture (index + pinky) — enters letter mode
+Track index fingertip position only in this mode
+Stroke recorded until 1.5-second idle pause
+Convert stroke to 28x28 pixel grayscale image via point rendering
+Center and normalize image within bounding box
+◆ Recognition Model
+Train CNN on EMNIST Balanced dataset (47 classes, 112,800 samples)
+Architecture: 2x Conv2D + MaxPool, Flatten, Dense 256, Dropout 0.3, Softmax 47
+Target accuracy: 93%+ on validation set
+Export to TensorFlow Lite for fast inference
+Top-3 candidates shown in HUD with confidence percentages
+User confirms correct letter with index tap gesture
+◆ Word Building Mode
+Successive letters accumulate in text buffer displayed in HUD
+Space added by horizontal swipe gesture
+Backspace by thumbs-down gesture while in text mode
+Entire word/sentence passed to Gemini for autocorrect + context
+Output text can be: displayed on canvas, saved as note, or used as AI prompt
+| PHASE 6 | WEB INTERFACE & HUD DESIGN | TIMELINE: Day 26–31 |  | :--- | :--- | :--- | | Focus | The interface must look like it was designed by an AI for an AI. Zero generic elements. | |
+◆ Visual Design System
+Color palette — 5 colors only: #050A14 (bg), #00E5FF (primary), #FFD700 (accent), #0D47A1 (structure), #4A7FA5 (dim)
+Font — Consolas or Share Tech Mono for all text. No serif, no sans-serif.
+All UI elements use 1px borders in #0D2137, hover glow in #00E5FF
+Scan line animation on main background — CSS keyframe, 2% opacity
+Circular radar sweep animation on idle state
+Corner bracket indicators on all floating panels — ◤ ◥ ◣ ◢
+All percentages and numbers use monospace with leading zeros
+No rounded corners. All panels are strict rectangles.
+◆ HUD Layout
+Top-left — System status, FPS counter, camera state, gesture mode
+Top-right — Current brush, layer, color swatch, AI status
+Bottom-left — Gesture history log, last 5 detected gestures
+Bottom-right — Export menu, collaboration status, voice toggle
+Center-left — Hand skeleton overlay (transparent, shows over camera feed)
+Center — Drawing canvas (camera + strokes composited)
+Floating panel — AI suggestion panel (appears on demand, auto-dismisses)
+Floating panel — Color palette orbit (appears as circular gesture wheel)
+◆ Animation Requirements
+Gesture confirmation — brief outward ring pulse at fingertip position
+Shape snap — snap animation with brief freeze frame + color flash
+Layer switch — horizontal slide transition
+AI panel — scan-line reveal from top, 300ms
+Error state — red border pulse on affected element
+All state transitions: 150ms max. No slow animations.
+◆ Responsive Architecture
+Primary resolution: 1920x1080 (16:9)
+Secondary: 1366x768 laptop fallback
+All positions in viewport units — no fixed pixel layout
+Camera feed always 16:9 aspect ratio locked
+| PHASE 7 | AI INTEGRATION LAYER | TIMELINE: Day 32–36 |  | :--- | :--- | :--- | | Focus | Gemini is the brain. Every creative decision that needs inference routes through here. | |
+◆ Gemini API Integration
+10-account rotation managed by token_manager.py
+Rate limit detection via HTTP 429 — auto-rotate to next account
+Requests are queued — never dropped, always eventually processed
+Usage dashboard — tokens used per account displayed in HUD
+All API calls are non-blocking — async/await throughout
+◆ Drawing Completion Feature
+Triggered by horns gesture held for 2 seconds
+Capture current canvas state as base64 PNG
+Send to Gemini Vision with prompt: describe what this drawing could become
+Render AI suggestion as ghost overlay on canvas
+User confirms to apply, or dismisses with open palm gesture
+◆ Air-Text Interpretation
+All air-written text passed to Gemini with context: what is user trying to write?
+Gemini autocorrects ambiguous characters based on context
+If text looks like a command — route to command_router.py
+If text looks like a label — place as canvas text annotation
+If text looks like a search — trigger web search and display results in HUD
+◆ Drawing Style Analysis
+On export request — send full canvas to Gemini
+Receive: artistic style classification, suggested color palette improvements, composition notes
+Display as analysis report overlay, dismissible
+◆ Custom Skill Teaching
+User can teach Gemini their personal drawing style via 5-drawing sample set
+Stored in local knowledge base file
+Future completions reference this style profile
+| PHASE 8 | ADVANCED EXCLUSIVE FEATURES | TIMELINE: Day 37–44 |  | :--- | :--- | :--- | | Focus | The features that make this unlike anything publicly available. | |
+◆ 3D Drawing Mode
+Activated by three-finger swipe up gesture
+Canvas becomes Three.js WebGL scene in browser
+Stroke Z-depth mapped from MediaPipe hand Z-value
+3D strokes render as ribbon meshes with configurable width
+Orbit controls — rotate with two-hand rotate gesture
+Zoom with two-hand spread/pinch gesture
+Switch between perspective and orthographic camera modes
+Export 3D drawing as OBJ/STL for 3D printing
+◆ Neural Style Transfer
+User draws anything on canvas
+On style command — apply TF Hub Magenta model
+Available preset styles: circuit board, watercolor, neon, oil painting, pencil sketch, blueprint
+Processing time indicator in HUD — non-blocking
+Result appears as new layer above original
+◆ Multiplayer Collaboration Mode
+Host mode — generate 6-digit room code, displayed in HUD
+Join mode — air-write room code to connect
+Each user has distinct cursor color, shown in HUD legend
+All strokes broadcast via Socket.IO to all room members
+Host can mute/kick collaborators via gesture sequence
+Max 4 simultaneous users per room
+◆ Voice Command Layer
+Activated by pinky-only extended gesture
+SpeechRecognition library captures microphone input
+100+ recognized commands: color names, brush modes, undo, clear, export, layer commands
+Unrecognized commands routed to Gemini for interpretation
+Voice waveform visualizer shown in HUD when active
+Commands logged to voice_history.json with timestamps
+◆ Keyboard Emulator Mode
+Air-write activates letter mode
+Full alphanumeric set recognized
+Special characters via gesture combinations
+Complete word building with gesture-based backspace and space
+Sentences passed to OS clipboard via pyperclip — paste anywhere
+This means zero physical keyboard required for any text input
+◆ Tactical HUD Mode
+Toggle by specific gesture sequence (three-finger tap twice)
+Switches to EDITH-style red-accent tactical interface
+Shows hand bounding box, landmark indices, confidence values
+Shows velocity vectors on each finger
+Shows gesture probability bars for top 5 candidate gestures
+Developer/debug view — used for calibration and training
+| PHASE 9 | TESTING, OPTIMIZATION & HARDENING | TIMELINE: Day 45–52 |  | :--- | :--- | :--- | | Focus | Nothing ships without passing every test. Performance targets are non-negotiable. | |
+◆ Performance Targets
+| COMPONENT | STATUS | PRIORITY |  | :--- | :--- | :--- | | Hand Tracking FPS | CRITICAL | 30+ FPS minimum on laptop CPU |  | Gesture Recognition | CRITICAL | >95% accuracy on all 30 gestures |  | WebSocket Latency | HIGH | <50ms frame-to-browser |  | Shape Recognition | HIGH | >90% correct on 25 shapes |  | Letter Recognition | HIGH | >93% on EMNIST test set |  | Memory Usage | HIGH | <600MB RAM total |  | Render Latency | CRITICAL | <16ms per frame |  | AI API Response | MEDIUM | <3 seconds for completion |
+◆ Test Coverage Requirements
+Unit tests — every function in core/ has at least 3 tests
+Integration tests — full pipeline test from camera input to browser output
+Gesture accuracy tests — automated using pre-recorded video clips
+Shape recognition tests — automated using synthetic stroke inputs
+Browser automation tests — Selenium validates all HUD elements
+Load tests — 4 concurrent users on collaboration mode
+Memory leak tests — 60-minute continuous operation without growth
+◆ Antigravity Test Agent Workflow
+Assign dedicated Testing agent in Antigravity Manager
+Agent writes all pytest test files from docstring specifications
+Agent runs Selenium browser automation against live server
+Agent generates HTML test report with screenshots of failures
+Agent suggests performance optimizations based on profiling data
+◆ Multi-Threading Architecture
+Thread 1 — Camera capture loop (never blocked)
+Thread 2 — MediaPipe processing (separate from display)
+Thread 3 — Gesture engine and command routing
+Thread 4 — WebSocket frame transmission
+Thread 5 — AI API calls (non-blocking async)
+All threads communicate via thread-safe queues, no shared mutable state
+| PHASE 10 | DEPLOYMENT & DISTRIBUTION | TIMELINE: Day 53–60 |  | :--- | :--- | :--- | | Focus | Free hosting. Zero downtime. Anyone with a webcam can use it. | |
+◆ Docker Containerization
+Single Dockerfile builds entire backend + frontend
+Multi-stage build — build stage and runtime stage
+Camera device passthrough configured for local Docker runs
+Environment variables for all API keys — no hardcoded credentials
+Health check endpoint — /health returns system status JSON
+docker-compose.yml for full local stack in one command
+◆ Free Hosting Stack
+Frontend — Vercel (free tier, unlimited bandwidth for static)
+Backend — Render (free tier, 750 hours/month)
+WebSocket — Fly.io (free tier, better latency than Render for sockets)
+Database (if needed) — Supabase free tier for collaboration state
+Note: Free tiers have cold start delays — document this clearly
+◆ Local-First Deployment (Recommended)
+Primary mode is local — camera data NEVER leaves the machine
+Backend runs on localhost:8000, frontend on localhost:3000
+Single startup script — one command to launch entire system
+Auto-open browser on launch
+Desktop shortcut generation script for Windows, macOS, Linux
+◆ Documentation
+README.md — 5-minute quickstart, dependencies, first run
+GESTURE_REFERENCE.md — all 30 gestures with visual diagrams
+DEVELOPER.md — architecture deep-dive, how to add new gestures
+USER_GUIDE.md — full feature walkthrough
+API_DOCS.md — FastAPI auto-generated + manually extended
+05 // ANTIGRAVITY MULTI-AGENT WORKFLOW
+▸ Agent Assignment Strategy  Never work alone. At all times, run minimum 3 agents simultaneously. One builds, one tests, one documents.
+| AGENT | MODEL | RESPONSIBILITY | PHASE ACTIVE |  | :--- | :--- | :--- | :--- | | Agent 1 | Gemini 3.1 Pro | Backend Python — all core modules | Phases 1-9 |  | Agent 2 | Gemini 3.1 Pro | Frontend React — HUD and components | Phases 6-9 |  | Agent 3 | Gemini Flash | ML models — gesture + letter training | Phases 2, 5 |  | Agent 4 | Gemini Flash | Test suite — write and run all tests | Phases 9-10 |  | Agent 5 | Gemini 3.1 Pro | Deployment — Docker, docs, landing page | Phase 10 |
+▸ Prompt Templates for Each Agent ◆ Backend Agent Prompt Template
+Build [module_name] for the Phantom Hand gesture system. Requirements: [list].
+The module must be fully typed with Python type hints, have docstrings on every function, log all errors to phantom_hand.log, raise custom exceptions from core/exceptions.py, and be testable in isolation.
+Performance target: [X]ms. Do not use any external library not already in requirements.txt without explicit approval.
+◆ Frontend Agent Prompt Template
+Build [ComponentName].jsx for the Phantom Hand HUD interface. Visual requirements: dark background #050A14, cyan #00E5FF as primary, Consolas font, no rounded corners, scan-line aesthetic.
+Functional requirements: [list]. Component receives data via [Socket event or prop].
+All user feedback must be visual only — no modal dialogs, no alert boxes.
+Animate all state transitions in 150ms or less.
+◆ Testing Agent Prompt Template
+Write a complete pytest test suite for [module_name]. For each public function: write 1 happy path test, 1 edge case test, 1 failure mode test.
+Mock all external dependencies. Use fixtures for shared setup. The suite must achieve 90%+ coverage.
+After writing tests, run them and report failures with proposed fixes.
+06 // FUTURE EXPANSION TO-DO LIST
+These are features not in the initial build. Prioritized by impact. Build after v1.0 is stable.
+▸ Version 1.1 — Precision Upgrades
+[01] Implement pressure-sensitive drawing using hand Z-depth more granularly — map 0.01 Z units to 1px width change
+[02] Add sub-pixel landmark interpolation for smoother curves at slow draw speeds
+[03] Implement velocity-based line width — fast strokes = thin, slow strokes = thick
+[04] Add stroke stabilizer with configurable lag — compensates for hand tremor
+[05] Build gesture analytics dashboard — shows accuracy stats over time, most-used gestures
+[06] Implement perspective-correct drawing on virtual tilted plane via homography transform
+▸ Version 1.2 — AI Expansion
+[07] Integrate Gemini Live streaming — real-time drawing feedback as you draw, not just on request
+[08] Build auto-coloring feature — draw outlines in air, Gemini suggests and applies colors
+[09] Add sketch-to-3D — Gemini interprets 2D sketch and generates Three.js 3D object
+[10] Build style reference system — point camera at real-world object, Gemini transfers its texture to brush
+[11] Implement AI-generated gesture suggestions — Gemini learns your workflow and suggests shortcuts
+▸ Version 1.3 — OS Integration
+[12] Build system tray daemon — Phantom Hand runs in background, activates on hotkey
+[13] OS-level gesture mouse — index finger controls system cursor when app is minimized
+[14] Screenshot and annotation mode — gesture captures screen, annotate with hand drawing
+[15] Gesture-controlled media player — play/pause/volume via hand signs system-wide
+[16] Virtual keyboard mode — air-type into any OS text field via pyperclip integration
+▸ Version 1.4 — Hardware Expansion
+[17] Intel RealSense camera support — true depth sensor for accurate Z-axis mapping
+[18] Dual webcam stereoscopic tracking — depth from stereo vision without depth camera
+[19] Leap Motion controller integration — alternative to webcam for higher precision
+[20] Mobile camera support — use phone camera as webcam via DroidCam/EpocCam
+[21] AR glasses passthrough — render HUD on Nreal/XREAL glasses display
+▸ Version 1.5 — Platform Expansion
+[22] Electron desktop app wrapper — distributable .exe/.dmg/.AppImage with one click
+[23] Browser extension — inject Phantom Hand into any webpage as overlay
+[24] OBS plugin — use drawing overlay as live stream overlay layer
+[25] Figma plugin — control Figma design tool via hand gestures
+[26] VS Code extension — navigate and edit code files with gesture shortcuts
+▸ Version 2.0 — Vision System
+[27] Object tracking — lock onto real-world objects in camera feed, annotate them
+[28] Face tracking secondary mode — head tilt and eye direction as additional inputs
+[29] Body pose estimation — full-body gesture library using MediaPipe Pose
+[30] Multi-person tracking — each person in frame controls their own canvas layer
+[31] Gesture recording and playback — record gesture macros, replay to automate tasks
+[32] Neural gesture synthesis — AI generates new gestures you have not thought of
+▸ Monetization Roadmap — When Ready
+[33] Package as Fiverr gig — custom gesture interface integration for clients — $200-800/project
+[34] GitHub open-source release — attract contributors, build reputation
+[35] Premium gesture pack marketplace — sell specialized gesture libraries
+[36] Education license — sell to universities for HCI research and coursework
+[37] Patent core shape-recognition algorithm if sufficiently novel
+[38] SaaS API — charge per 1000 gesture recognition API calls for third-party apps
+07 // MASTER EXECUTION CHECKLIST
+▸ Pre-Build Verification
+Antigravity installed and configured
+All 10 Google accounts added to token_manager.py
+Python 3.11+ verified
+Node.js 20 LTS verified
+Webcam tested — returns 30fps at 1280x720
+Git repository initialized
+Project folder structure created exactly as specified in Section 3
+requirements.txt and package.json created and all packages installed
+5 Antigravity agent slots configured
+▸ Phase 0-2 Completion Gates
+Camera stream runs at 30+ FPS without drops
+Both hands tracked simultaneously with 21 landmarks each
+Kalman filter reduces jitter to under 5px on stationary hold
+All 30 gestures recognized with >95% accuracy on your own hand
+Gesture state machine transitions correctly in all states
+No gesture false-triggering during neutral hand position
+▸ Phase 3-5 Completion Gates
+All 12 brush modes render visually distinct from each other
+Brush strokes maintain 30fps during active drawing
+All 25 shapes correctly recognized from freehand strokes
+Shape autocomplete ghost appears within 200ms of stroke start
+Letter recognition achieves 93%+ on test video clip
+Full word building mode works end-to-end via gestures only
+▸ Phase 6-8 Completion Gates
+HUD displays all required panels simultaneously with no visual clutter
+No generic UI elements present anywhere — everything is custom Phantom Hand design
+All gesture-triggered UI transitions complete in under 150ms
+Gemini drawing completion returns result within 3 seconds
+3D mode renders strokes with correct Z-depth from hand position
+Multiplayer mode supports 2+ simultaneous users on local network
+Voice commands trigger correct actions within 2 seconds of speaking
+Zero keyboard required for any system function
+▸ Phase 9-10 Completion Gates
+All unit tests pass with 90%+ coverage
+60-minute stress test shows no memory leaks or FPS degradation
+Docker container builds and runs cleanly on fresh machine
+All 8 export formats produce valid output files
+System works on Windows, macOS, and Linux
+Complete documentation written and reviewed
+08 // CRITICAL BUILD RULES
+| RULE | DESCRIPTION |  | :--- | :--- | | RULE 01 | NEVER advance a phase without meeting its completion gate. A broken foundation makes every layer above it wrong. |  | RULE 02 | Every Antigravity agent prompt must include explicit output requirements. Vague prompts produce generic code. |  | RULE 03 | Test every gesture on YOUR hand in YOUR lighting before marking it complete. Accuracy metrics in controlled conditions are useless. |  | RULE 04 | If any feature requires copying existing open-source code verbatim, rewrite it. This project is exclusive, not assembled. |  | RULE 05 | Performance problems discovered late are architecture problems. Profile after every phase, not just at the end. |  | RULE 06 | The HUD is part of the product. If it looks generic, the entire project looks generic. Design it last, treat it first. |  | RULE 07 | This is a 60-day build. Not 10. Not 20. Rushing Phase 1 to get to 'the cool AI stuff' is how you get an unstable system no one can use. |  | RULE 08 | You have 10 Gemini accounts. Use all of them simultaneously through Antigravity's multi-agent mode. Parallel development is the advantage. Don't work sequentially. |
+━━━ END OF MASTER BUILD DOCUMENT ━━━ PHANTOM HAND // BUILD v1.0 // CLASSIFICATION: UNRESTRICTED
