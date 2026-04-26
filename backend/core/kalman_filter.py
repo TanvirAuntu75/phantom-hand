@@ -10,9 +10,9 @@ class LandmarkSmoother:
         self.state = None
         
         # Tuning parameters
-        self.min_alpha = 0.1  # Heavy smoothing when hand is completely still (removes jitter)
-        self.max_alpha = 0.9  # Almost no smoothing when moving fast (removes lag)
-        self.speed_multiplier = 15.0 # How quickly it transitions from heavy smoothing to no smoothing
+        self.min_alpha = 0.2  # Slightly increased to allow slightly more movement when "still"
+        self.max_alpha = 0.95 # Increased to reduce lag even further when moving fast
+        self.speed_multiplier = 25.0 # Increased to react much faster to deliberate movements
 
     def reset(self):
         """Reset the filter when hand disappears from frame."""

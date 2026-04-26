@@ -20,7 +20,10 @@ class DrawingEngine:
         
         # Brand Colors
         self.color = (255, 229, 0) # Electric Cyan (BGR)
-        self.thickness = 4
+        self.thickness = 6 # Slightly thicker for better visibility
+
+        # Anti-aliased lines for much smoother rendering
+        self.line_type = cv2.LINE_AA
 
         # ── TELEPORT GUARD ────────────────────────────────────────────────────
         # Increased to 250px to handle very fast handwriting strokes without
@@ -64,7 +67,7 @@ class DrawingEngine:
         if hand_id in self.current_strokes and len(self.current_strokes[hand_id]) > 1:
             # Draw the final stroke onto the permanent canvas
             pts = np.array(self.current_strokes[hand_id], np.int32)
-            cv2.polylines(self.canvas, [pts], False, self.color, self.thickness)
+            cv2.polylines(self.canvas, [pts], False, self.color, self.thickness, self.line_type)
             
             # Save to history for undo
             self.stroke_history.append(self.canvas.copy())
@@ -81,7 +84,7 @@ class DrawingEngine:
         for hand_id, stroke_pts in self.current_strokes.items():
             if len(stroke_pts) > 1:
                 pts = np.array(stroke_pts, np.int32)
-                cv2.polylines(output, [pts], False, self.color, self.thickness)
+                cv2.polylines(output, [pts], False, self.color, self.thickness, self.line_type)
         
         # Mask where drawing exists
         gray = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
