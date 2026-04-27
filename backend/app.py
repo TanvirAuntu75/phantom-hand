@@ -100,8 +100,10 @@ def pipeline_loop():
 
     logger.info("Pipeline thread started.")
 
+    frame_count = 0
     while not pipeline_event.is_set():
         start_time = time.time()
+        frame_count += 1
 
         frame = cam.read()
         if frame is None:
@@ -153,6 +155,25 @@ def pipeline_loop():
                         self.gesture = g
                 gesture_result = MockResult(gesture)
 
+            # Process ghost preview for PINCH gesture every 5 frames
+            shape_candidate = None
+            if gesture == "PINCH" and frame_count % 5 == 0:
+                if hasattr(canvas, "get_current_stroke_points"):
+                    stroke = canvas.get_current_stroke_points(tracked_id)
+                    if stroke and len(stroke) > 10 and recognizer:
+                        # Handle both the prompt's requested recognize() and the actual recognize_and_snap()
+                        recognize_func = getattr(recognizer, "recognize", getattr(recognizer, "recognize_and_snap", None))
+                        if recognize_func:
+                            candidate = recognize_func(stroke)
+                            if candidate:
+                                shape_name = candidate.shape if hasattr(candidate, "shape") else candidate.get("shape")
+                                if shape_name and shape_name != "FREEFORM":
+                                    shape_candidate = candidate if isinstance(candidate, dict) else {
+                                        "shape": candidate.shape,
+                                        "confidence": candidate.confidence,
+                                        "fitted_points": candidate.fitted_points
+                                    }
+
             if router:
                 router.route(tracked_id, gesture_result, landmarks)
 
@@ -160,7 +181,8 @@ def pipeline_loop():
                 "id": tracked_id,
                 "is_ghost": is_ghost_hand,
                 "landmarks": landmarks,
-                "gesture": gesture
+                "gesture": gesture,
+                "shape_candidate": shape_candidate
             })
 
         # 3. Render frame with composited canvas
@@ -181,8 +203,13 @@ def pipeline_loop():
             time.sleep(target_delay - elapsed)
 
 # ── LIFECYCLE EVENTS ──────────────────────────────────────────────────────────
+# Global reference to the event loop for the background thread to emit events
+main_loop = None
+
 @app.on_event("startup")
 async def startup_event():
+    global main_loop
+    main_loop = asyncio.get_running_loop()
     global tracker, canvas, cam, pipeline_thread, router, recognizer
     logger.info("Initializing PHANTOM HAND subsystems...")
 
@@ -247,9 +274,18 @@ async def broadcast_loop():
             if canvas and hasattr(canvas, "get_state"):
                 system_state.update(canvas.get_state())
 
+            # Look for shape candidates to promote to the top level
+            shape_candidate = None
+            if last_hand_data:
+                for hand in last_hand_data:
+                    if hand.get("shape_candidate"):
+                        shape_candidate = hand["shape_candidate"]
+                        break
+
             await sio.emit("hand_data", {
                 "fps": tracker.get_fps() if tracker else 0.0,
                 "hands": last_hand_data or [],
+                "shape_candidate": shape_candidate,
                 "systemState": system_state
             })
 

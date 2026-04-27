@@ -7,6 +7,7 @@ export const useHandData = (socket) => {
   const [hands, setHands] = useState([]);
   const [fps, setFps] = useState(0);
   const [shapeCandidate, setShapeCandidate] = useState(null);
+  const [snappedShape, setSnappedShape] = useState(null);
   const [gestureLog, setGestureLog] = useState([]);
 
   // Default system state fallback
@@ -67,14 +68,24 @@ export const useHandData = (socket) => {
       }
     };
 
+    const handleShapeSnapped = (data) => {
+      setSnappedShape(data);
+      // Clear after 2 seconds
+      setTimeout(() => {
+        setSnappedShape(null);
+      }, 2000);
+    };
+
     socket.on('video_frame', handleVideoFrame);
     socket.on('hand_data', handleHandData);
+    socket.on('shape_snapped', handleShapeSnapped);
 
     return () => {
       socket.off('video_frame', handleVideoFrame);
       socket.off('hand_data', handleHandData);
+      socket.off('shape_snapped', handleShapeSnapped);
     };
   }, [socket]);
 
-  return { videoFrame, hands, fps, systemState, gestureLog, shapeCandidate };
+  return { videoFrame, hands, fps, systemState, gestureLog, shapeCandidate, snappedShape };
 };

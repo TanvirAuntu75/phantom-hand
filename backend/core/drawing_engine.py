@@ -106,3 +106,38 @@ class DrawingEngine:
         self.canvas = np.zeros_like(self.canvas)
         self.stroke_history = []
         self.current_strokes = {}
+
+    def get_last_stroke_points(self, hand_id: str = None):
+        """Returns the points of the last completed stroke for snapping"""
+        # The prompt implies returning the last drawn stroke.
+        # However, our basic DrawingEngine merges strokes onto canvas.
+        # For the sake of the shape recognizer, we need access to raw stroke points.
+        if hand_id and hand_id in self.current_strokes and len(self.current_strokes[hand_id]) > 0:
+             return self.current_strokes[hand_id]
+
+        # If no active stroke, fallback to returning empty or we'd need to have saved strokes.
+        # Let's save the last completed stroke points just for this purpose.
+        if hasattr(self, "last_completed_stroke") and self.last_completed_stroke:
+             return self.last_completed_stroke
+
+        return []
+
+    def get_current_stroke_points(self, hand_id: str):
+        """Returns the points of the currently active stroke for preview"""
+        return self.current_strokes.get(hand_id, [])
+
+    def snap_shape(self, hand_id: str, fitted_points: list, shape_name: str):
+        """Replaces the last stroke with a perfect geometric shape"""
+        # Erase the last stroke from the canvas (we just use undo since finish_stroke pushes to history)
+        self.undo()
+
+        # Draw the perfect shape
+        pts = np.array(fitted_points, np.int32)
+
+        # Polylines needs closed=True for most shapes except lines
+        is_closed = shape_name not in ["LINE", "FREEFORM"]
+        cv2.polylines(self.canvas, [pts], is_closed, self.color, self.thickness, self.line_type)
+
+        # Save to history
+        self.stroke_history.append(self.canvas.copy())
+        if len(self.stroke_history) > 20: self.stroke_history.pop(0)

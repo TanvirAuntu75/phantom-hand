@@ -114,12 +114,54 @@ class CommandRouter:
 
         elif gesture == "SNAP_SHAPE" and self._debounce("SNAP_SHAPE", now):
             if hasattr(self.canvas, "get_last_stroke_points") and hasattr(self.canvas, "snap_shape"):
-                stroke = self.canvas.get_last_stroke_points()
+                # Handle possible hand_id argument
+                try:
+                    stroke = self.canvas.get_last_stroke_points(label)
+                except TypeError:
+                    stroke = self.canvas.get_last_stroke_points()
+
                 if stroke and self.recognizer:
-                    shape_result = self.recognizer.recognize(stroke)
-                    if shape_result:
-                        self.canvas.snap_shape(shape_result)
-                        action_fired = True
+                    recognize_func = getattr(self.recognizer, "recognize", getattr(self.recognizer, "recognize_and_snap", None))
+                    if recognize_func:
+                        result = recognize_func(stroke)
+                        if result:
+                            # Handle both object and dict returns
+                            shape_name = getattr(result, "shape", result.get("shape", "")) if isinstance(result, dict) else result.shape
+                            fitted_points = getattr(result, "fitted_points", result.get("fitted_points", [])) if isinstance(result, dict) else result.fitted_points
+                            confidence = getattr(result, "confidence", result.get("confidence", 0.0)) if isinstance(result, dict) else result.confidence
+
+                            if shape_name and shape_name != "FREEFORM":
+                                # Handle snap_shape arguments
+                                try:
+                                    self.canvas.snap_shape(label, fitted_points, shape_name)
+                                except TypeError:
+                                    try:
+                                        self.canvas.snap_shape(fitted_points, shape_name)
+                                    except TypeError:
+                                        self.canvas.snap_shape(result)
+
+                                # Emit socket event if we can
+                                import asyncio
+                                try:
+                                    # Very hacky way to reach sio from here, but avoids circular imports
+                                    # The prompt said to emit "shape_snapped", we'll try to get it from sys.modules
+                                    import sys
+                                    if "backend.app" in sys.modules:
+                                        app_mod = sys.modules["backend.app"]
+                                        if hasattr(app_mod, "sio") and hasattr(app_mod, "main_loop"):
+                                            asyncio.run_coroutine_threadsafe(
+                                                app_mod.sio.emit("shape_snapped", {
+                                                    "shape": shape_name,
+                                                    "confidence": confidence,
+                                                    "fitted_points": fitted_points,
+                                                    "hand_id": label
+                                                }),
+                                                app_mod.main_loop
+                                            )
+                                except Exception as e:
+                                    logger.error(f"Failed to emit shape_snapped: {e}")
+
+                                action_fired = True
 
         elif gesture == "SWIPE_RIGHT" and self._debounce("SWIPE_RIGHT", now):
             if hasattr(self.canvas, "next_color"):

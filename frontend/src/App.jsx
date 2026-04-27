@@ -8,7 +8,7 @@ function App() {
   const socketUrl = import.meta.env.PROD ? '' : 'http://localhost:8000';
 
   const { socket, isConnected } = useSocket(socketUrl);
-  const { videoFrame, handData, fps, systemState, gestureLog, shapeCandidate } = useHandData(socket);
+  const { videoFrame, handData, fps, systemState, gestureLog, shapeCandidate, snappedShape } = useHandData(socket);
 
   // Re-map fps into handData structure to avoid prop drilling issues in HUDOverlay if it relies on handData.fps
   const consolidatedHandData = { ...handData, fps: fps };
@@ -21,6 +21,7 @@ function App() {
       systemState={systemState}
       gestureLog={gestureLog}
       shapeCandidate={shapeCandidate}
+      snappedShape={snappedShape}
     />
   );
 }
