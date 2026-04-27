@@ -27,6 +27,8 @@ class DrawingEngine:
         self._strokes_3d = []  # Permanent 3D strokes
         self.current_strokes_3d = {}  # Active 3D strokes keyed by hand_id
 
+        self.raw_strokes_2d = [] # Complete record of all 2D strokes
+
         # ── TELEPORT GUARD ────────────────────────────────────────────────────
         # Increased to 250px to handle very fast handwriting strokes without
         # accidentally 'lifting the pen'.
@@ -72,9 +74,20 @@ class DrawingEngine:
     def finish_stroke(self, hand_id: str):
         """Commits the active stroke buffer to the permanent canvas."""
         if hand_id in self.current_strokes and len(self.current_strokes[hand_id]) > 1:
+            # Save raw points for shape recognition and vector export
+            self.last_completed_stroke = list(self.current_strokes[hand_id])
+
+            # Save full stroke data for vector export
+            self.raw_strokes_2d.append({
+                "points": list(self.current_strokes[hand_id]),
+                "color": self.color,
+                "width": self.thickness
+            })
+
             # Draw the final stroke onto the permanent canvas
             pts = np.array(self.current_strokes[hand_id], np.int32)
-            cv2.polylines(self.canvas, [pts], False, self.color, self.thickness)
+            # using default cv2.LINE_AA style instead of relying on missing self.line_type attribute
+            cv2.polylines(self.canvas, [pts], False, self.color, self.thickness, cv2.LINE_AA)
             
             # Save to history for undo
             self.stroke_history.append(self.canvas.copy())
@@ -115,12 +128,16 @@ class DrawingEngine:
         if len(self._strokes_3d) > 0:
             self._strokes_3d.pop()
 
+        if hasattr(self, "raw_strokes_2d") and len(self.raw_strokes_2d) > 0:
+            self.raw_strokes_2d.pop()
+
     def clear_all(self):
         self.canvas = np.zeros_like(self.canvas)
         self.stroke_history = []
         self.current_strokes = {}
         self._strokes_3d = []
         self.current_strokes_3d = {}
+        self.raw_strokes_2d = []
 
     def clear(self):
         self.clear_all()

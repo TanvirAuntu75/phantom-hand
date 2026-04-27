@@ -19,6 +19,8 @@ from backend.core.hand_tracker import UltimateHandTracker
 from backend.core.drawing_engine import DrawingEngine
 from backend.core.command_router import CommandRouter
 from backend.core.shape_recognizer import ShapeRecognizer
+from backend.utils.exporter import Exporter
+from fastapi.responses import FileResponse
 
 # The prompt said use "CameraStream (backend/core/hand_tracker.py)".
 # CameraStream is nested inside the __main__ block of hand_tracker.py, so it's not importable.
@@ -78,6 +80,7 @@ canvas: DrawingEngine = None
 cam: CameraStream = None
 router: CommandRouter = None
 recognizer: ShapeRecognizer = None
+exporter = Exporter()
 gesture_states = {}
 
 pipeline_event = Event()
@@ -341,23 +344,47 @@ async def undo_canvas():
         return {"status": "success", "message": "Undo applied"}
     raise HTTPException(status_code=500, detail="Canvas not initialized")
 
-@app.post("/canvas/export")
-async def export_canvas():
-    if not canvas:
-        raise HTTPException(status_code=500, detail="Canvas not initialized")
+@app.post("/export/png")
+async def export_png():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_png, canvas)
+    logger.info(f"Canvas exported to {path}")
+    return {"status": "success", "path": path, "filename": filename}
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = f"exports/phantom_hand_{timestamp}.png"
+@app.post("/export/svg")
+async def export_svg():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_svg, canvas)
+    logger.info(f"Canvas exported to {path}")
+    return {"status": "success", "path": path, "filename": filename}
 
-    def save_image():
-        os.makedirs("exports", exist_ok=True)
-        cv2.imwrite(filepath, canvas.canvas)
+@app.post("/export/gif")
+async def export_gif():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_gif, canvas)
+    logger.info(f"Canvas exported to {path}")
+    return {"status": "success", "path": path, "filename": filename}
 
-    await asyncio.to_thread(save_image)
+@app.post("/export/mp4")
+async def export_mp4():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_mp4, canvas)
+    logger.info(f"Canvas exported to {path}")
+    return {"status": "success", "path": path, "filename": filename}
 
-    logger.info(f"Canvas exported to {filepath}")
+@app.get("/export/{filename}")
+async def download_export(filename: str):
+    # Prevent Path Traversal (LFI)
+    clean_filename = os.path.basename(filename)
+    filepath = os.path.abspath(os.path.join(exporter.export_dir, clean_filename))
 
-    return {"status": "success", "filepath": filepath}
+    # Ensure the resolved path is actually within the exports directory
+    if not filepath.startswith(os.path.abspath(exporter.export_dir)):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    if os.path.exists(filepath):
+        return FileResponse(filepath, media_type='application/octet-stream', filename=clean_filename)
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/canvas/snapshot")
 async def get_canvas_snapshot():

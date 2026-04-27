@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DrawingCanvas from './DrawingCanvas';
 import SystemPanel from './SystemPanel';
 import GestureLog from './GestureLog';
@@ -7,8 +7,32 @@ import BrushModeBar from './BrushModeBar';
 import ColorOrb from './ColorOrb';
 import SnapFeedback from './SnapFeedback';
 import Scene3D from '../three/Scene3D';
+import ExportMenu from './ExportMenu';
 
 const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d }) => {
+  const [exportVisible, setExportVisible] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key.toLowerCase() === 'e') {
+        setExportVisible(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    // Check for FOUR_CLOSE gesture
+    if (handData && handData.hands) {
+      const isFourClose = handData.hands.some(h => h.gesture === 'FOUR_CLOSE');
+      // Only open export menu if we are NOT in 3D mode. In 3D mode, FOUR_CLOSE is handled by Scene3D.
+      if (isFourClose && !systemState.mode_3d) {
+        setExportVisible(true);
+      }
+    }
+  }, [handData, systemState.mode_3d]);
+
   return (
     <div className="w-screen h-screen overflow-hidden relative selection:bg-primary selection:text-bg">
       <DrawingCanvas
@@ -17,6 +41,7 @@ const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog
         shapeCandidate={shapeCandidate}
       />
       <SnapFeedback snappedShape={snappedShape} />
+      <ExportMenu visible={exportVisible} onClose={() => setExportVisible(false)} />
       {systemState.mode_3d && (
         <Scene3D strokes={strokes3d} hands={handData.hands} />
       )}
