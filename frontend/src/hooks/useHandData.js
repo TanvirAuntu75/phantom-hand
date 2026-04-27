@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 
 export const useHandData = (socket) => {
   const [videoFrame, setVideoFrame] = useState(null);
-  const [handData, setHandData] = useState({ fps: 0, hands: [] });
+
+  // Expose parsed hand data
+  const [hands, setHands] = useState([]);
+  const [fps, setFps] = useState(0);
+  const [shapeCandidate, setShapeCandidate] = useState(null);
+  const [gestureLog, setGestureLog] = useState([]);
+
+  // Default system state fallback
   const [systemState, setSystemState] = useState({
     brushMode: 'PNC',
     activeLayer: 1,
@@ -15,8 +22,6 @@ export const useHandData = (socket) => {
     totalColors: 7
   });
 
-  const [gestureLog, setGestureLog] = useState([]);
-
   useEffect(() => {
     if (!socket) return;
 
@@ -25,28 +30,37 @@ export const useHandData = (socket) => {
     };
 
     const handleHandData = (data) => {
-      setHandData(data);
-      if (data.systemState) {
-        setSystemState(data.systemState);
+      setFps(data.fps || 0);
+
+      if (data.hands) {
+        setHands(data.hands);
       }
 
-      // Extract gestures for the log (a real backend might emit these specifically)
+      if (data.shape_candidate) {
+        setShapeCandidate(data.shape_candidate);
+      } else {
+        setShapeCandidate(null);
+      }
+
+      if (data.systemState || data.canvas_state) {
+        setSystemState(data.systemState || data.canvas_state);
+      }
+
+      // Update gesture log
       if (data.hands && data.hands.length > 0) {
         data.hands.forEach(hand => {
-          if (hand.gesture && hand.gesture !== 'HOVER' && hand.gesture !== 'DRAW') {
-             // Basic deduplication based on time (prevent flooding)
+          if (hand.gesture && hand.gesture !== 'HOVER') {
              setGestureLog(prev => {
                 const now = new Date();
                 const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
                 const entry = `${timeString} - ${hand.gesture}`;
 
-                // Don't add if it's the exact same as the last entry (simple debounce visualization)
+                // Don't add if it's exactly the same as the last entry
                 if (prev.length > 0 && prev[0].split(' - ')[1] === hand.gesture) {
                     return prev;
                 }
 
-                const newLog = [entry, ...prev].slice(0, 8); // Keep last 8
-                return newLog;
+                return [entry, ...prev].slice(0, 8);
              });
           }
         });
@@ -62,5 +76,5 @@ export const useHandData = (socket) => {
     };
   }, [socket]);
 
-  return { videoFrame, handData, systemState, gestureLog };
+  return { videoFrame, hands, fps, systemState, gestureLog, shapeCandidate };
 };

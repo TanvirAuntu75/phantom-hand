@@ -1,15 +1,19 @@
 import React from 'react';
-import VideoFeed from './VideoFeed';
+import DrawingCanvas from './DrawingCanvas';
 import SystemPanel from './SystemPanel';
 import GestureLog from './GestureLog';
 import HandStatePanel from './HandStatePanel';
 import BrushModeBar from './BrushModeBar';
 import ColorOrb from './ColorOrb';
 
-const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog }) => {
+const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog, shapeCandidate }) => {
   return (
     <div className="w-screen h-screen overflow-hidden relative selection:bg-primary selection:text-bg">
-      <VideoFeed frameSrc={videoFrame} />
+      <DrawingCanvas
+        videoFrame={videoFrame}
+        handData={handData}
+        shapeCandidate={shapeCandidate}
+      />
 
       <SystemPanel
         isConnected={isConnected}
