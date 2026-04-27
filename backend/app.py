@@ -17,6 +17,8 @@ import socketio
 from backend.config import settings
 from backend.core.hand_tracker import UltimateHandTracker
 from backend.core.drawing_engine import DrawingEngine
+from backend.core.command_router import CommandRouter
+from backend.core.shape_recognizer import ShapeRecognizer
 
 # The prompt said use "CameraStream (backend/core/hand_tracker.py)".
 # CameraStream is nested inside the __main__ block of hand_tracker.py, so it's not importable.
@@ -45,7 +47,7 @@ class CameraStream:
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler("phantom_hand.log"),
@@ -74,11 +76,19 @@ socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 tracker: UltimateHandTracker = None
 canvas: DrawingEngine = None
 cam: CameraStream = None
+router: CommandRouter = None
+recognizer: ShapeRecognizer = None
+gesture_states = {}
 
 pipeline_event = Event()
 pipeline_thread: Thread = None
 last_encoded_frame = None
 last_hand_data = None
+
+# A mock class for GestureResult to simulate the gesture_engine output since it is not built yet
+class MockGestureResult:
+    def __init__(self, gesture):
+        self.gesture = gesture
 
 # ── PIPELINE THREAD ───────────────────────────────────────────────────────────
 def pipeline_loop():
@@ -100,22 +110,39 @@ def pipeline_loop():
 
         h, w = frame.shape[:2]
 
-        # 1. Run AI tracking - as required by instructions
+        # 1. Run AI tracking
         try:
             tracker.process_frame(frame, w, h)
         except Exception as e:
-            # gracefully handle potential errors from process_frame
-            pass
+            logger.error(f"Error in process_frame: {e}")
 
         all_hands = tracker.get_all_hands(frame, w, h)
         current_hand_data = []
 
         # 2. Process gestures and update drawing
         for tracked_id, (landmarks, is_ghost_hand) in all_hands.items():
+
+            # Simulated GestureEngine execution since it does not exist in the stub.
+            # Using existing GestureState if possible.
+            try:
+                from backend.core.gesture_state import GestureState
+                if tracked_id not in gesture_states:
+                    gesture_states[tracked_id] = GestureState()
+                raw_state = gesture_states[tracked_id].get_state(landmarks)
+                gesture = "DRAW" if raw_state == "DRAW" else "HOVER"
+            except ImportError:
+                gesture = "HOVER"
+
+            gesture_result = MockGestureResult(gesture)
+
+            if router:
+                router.route(tracked_id, gesture_result, landmarks)
+
             current_hand_data.append({
                 "id": tracked_id,
                 "is_ghost": is_ghost_hand,
-                "landmarks": landmarks
+                "landmarks": landmarks,
+                "gesture": gesture
             })
 
         # 3. Render frame with composited canvas
@@ -138,7 +165,7 @@ def pipeline_loop():
 # ── LIFECYCLE EVENTS ──────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup_event():
-    global tracker, canvas, cam, pipeline_thread
+    global tracker, canvas, cam, pipeline_thread, router, recognizer
     logger.info("Initializing PHANTOM HAND subsystems...")
 
     # Initialize Camera
@@ -156,6 +183,8 @@ async def startup_event():
 
     tracker = UltimateHandTracker(model_path="hand_landmarker.task")
     canvas = DrawingEngine(settings.CAMERA_WIDTH, settings.CAMERA_HEIGHT)
+    recognizer = ShapeRecognizer()
+    router = CommandRouter(canvas, recognizer)
 
     # Start Pipeline Thread
     pipeline_event.clear()
@@ -228,10 +257,12 @@ async def clear_canvas():
         logger.info("Canvas cleared.")
         return {"status": "success", "message": "Canvas cleared"}
     raise HTTPException(status_code=500, detail="Canvas not initialized")
+
 @app.post("/canvas/undo")
 async def undo_canvas():
     if canvas:
-        canvas.undo()
+        if hasattr(canvas, "undo"):
+            canvas.undo()
         logger.info("Canvas undo triggered.")
         return {"status": "success", "message": "Undo applied"}
     raise HTTPException(status_code=500, detail="Canvas not initialized")
