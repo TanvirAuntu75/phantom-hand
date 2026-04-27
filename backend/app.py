@@ -63,7 +63,7 @@ app = FastAPI(title="PHANTOM HAND Backend")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -122,18 +122,36 @@ def pipeline_loop():
         # 2. Process gestures and update drawing
         for tracked_id, (landmarks, is_ghost_hand) in all_hands.items():
 
-            # Simulated GestureEngine execution since it does not exist in the stub.
-            # Using existing GestureState if possible.
+            # Use gesture_engine logic
             try:
-                from backend.core.gesture_state import GestureState
-                if tracked_id not in gesture_states:
-                    gesture_states[tracked_id] = GestureState()
-                raw_state = gesture_states[tracked_id].get_state(landmarks)
-                gesture = "DRAW" if raw_state == "DRAW" else "HOVER"
-            except ImportError:
-                gesture = "HOVER"
+                # Based on context: gesture_engine.py outputs GestureResult with .gesture string
+                from backend.core.gesture_engine import GestureEngine
 
-            gesture_result = MockGestureResult(gesture)
+                # In a real impl, we'd initialize the engine globally or per-hand,
+                # but following the previous pattern:
+                if 'gesture_engine' not in globals():
+                    global gesture_engine
+                    gesture_engine = GestureEngine()
+
+                # Assuming standard interface process(landmarks)
+                gesture_result = gesture_engine.process(landmarks)
+                gesture = gesture_result.gesture if hasattr(gesture_result, "gesture") else "HOVER"
+            except ImportError:
+                # Fallback to gesture_state if gesture_engine doesn't exist
+                try:
+                    from backend.core.gesture_state import GestureState
+                    if tracked_id not in gesture_states:
+                        gesture_states[tracked_id] = GestureState()
+                    raw_state = gesture_states[tracked_id].get_state(landmarks)
+                    gesture = "DRAW" if raw_state == "DRAW" else "HOVER"
+                except ImportError:
+                    gesture = "HOVER"
+
+                # Create mock result object to satisfy router interface
+                class MockResult:
+                    def __init__(self, g):
+                        self.gesture = g
+                gesture_result = MockResult(gesture)
 
             if router:
                 router.route(tracked_id, gesture_result, landmarks)
@@ -214,9 +232,25 @@ async def broadcast_loop():
             b64_frame = base64.b64encode(last_encoded_frame).decode('utf-8')
 
             await sio.emit("video_frame", {"image": f"data:image/jpeg;base64,{b64_frame}"})
+            # Get current system state from canvas if available
+            system_state = {
+                "brushMode": "PNC",
+                "activeLayer": 1,
+                "totalLayers": 5,
+                "brushSize": getattr(canvas, "thickness", 12) if canvas else 12,
+                "mirrorH": False,
+                "mirrorV": False,
+                "color": getattr(canvas, "color", "#00E5FF") if canvas else "#00E5FF",
+                "colorIndex": 1,
+                "totalColors": 7
+            }
+            if canvas and hasattr(canvas, "get_state"):
+                system_state.update(canvas.get_state())
+
             await sio.emit("hand_data", {
                 "fps": tracker.get_fps() if tracker else 0.0,
-                "hands": last_hand_data or []
+                "hands": last_hand_data or [],
+                "systemState": system_state
             })
 
         await asyncio.sleep(1.0 / settings.TARGET_FPS)
