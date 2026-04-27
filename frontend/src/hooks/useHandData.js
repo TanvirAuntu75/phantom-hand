@@ -9,6 +9,7 @@ export const useHandData = (socket) => {
   const [shapeCandidate, setShapeCandidate] = useState(null);
   const [snappedShape, setSnappedShape] = useState(null);
   const [gestureLog, setGestureLog] = useState([]);
+  const [strokes3d, setStrokes3d] = useState([]);
 
   // Default system state fallback
   const [systemState, setSystemState] = useState({
@@ -76,16 +77,22 @@ export const useHandData = (socket) => {
       }, 2000);
     };
 
+    const handleStrokes3d = (data) => {
+      setStrokes3d(data);
+    };
+
     socket.on('video_frame', handleVideoFrame);
     socket.on('hand_data', handleHandData);
     socket.on('shape_snapped', handleShapeSnapped);
+    socket.on('strokes_3d', handleStrokes3d);
 
     return () => {
       socket.off('video_frame', handleVideoFrame);
       socket.off('hand_data', handleHandData);
       socket.off('shape_snapped', handleShapeSnapped);
+      socket.off('strokes_3d', handleStrokes3d);
     };
   }, [socket]);
 
-  return { videoFrame, hands, fps, systemState, gestureLog, shapeCandidate, snappedShape };
+  return { videoFrame, hands, fps, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d };
 };

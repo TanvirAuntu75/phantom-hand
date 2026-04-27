@@ -184,8 +184,8 @@ class CommandRouter:
             action_fired = True
 
         elif gesture == "THREE_UP" and self._debounce("THREE_UP", now):
-            if hasattr(self.canvas, "next_mode"):
-                self.canvas.next_mode()
+            if hasattr(self.canvas, "toggle_3d"):
+                self.canvas.toggle_3d()
             action_fired = True
 
         elif gesture == "HORNS" and self._debounce("HORNS", now):

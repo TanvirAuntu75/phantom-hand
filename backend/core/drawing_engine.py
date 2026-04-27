@@ -22,26 +22,31 @@ class DrawingEngine:
         self.color = (255, 229, 0) # Electric Cyan (BGR)
         self.thickness = 4
 
+        # 3D Mode Initialization
+        self.mode_3d = False
+        self._strokes_3d = []  # Permanent 3D strokes
+        self.current_strokes_3d = {}  # Active 3D strokes keyed by hand_id
+
         # ── TELEPORT GUARD ────────────────────────────────────────────────────
         # Increased to 250px to handle very fast handwriting strokes without
         # accidentally 'lifting the pen'.
         self.MAX_JUMP_PX = 250
         # ─────────────────────────────────────────────────────────────────────
 
-    def update(self, state: str, point: tuple = None, hand_id: str = "default"):
+    def update(self, state: str, point: tuple = None, hand_id: str = "default", wrist_angle=0.0, z_depth=0.0):
         """
         Updates the drawing logic for a specific hand.
-        state   : "DRAW" or "HOVER"
-        point   : (x, y) normalised [0.0 – 1.0], or None
-        hand_id : "Left", "Right", or any unique label
         """
         if state == "DRAW" and point is not None:
             px = int(point[0] * self.width)
             py = int(point[1] * self.height)
+            z_scaled = float(z_depth * 800)
             
             # Initialize stroke list for this hand if it doesn't exist
             if hand_id not in self.current_strokes:
                 self.current_strokes[hand_id] = []
+            if hand_id not in self.current_strokes_3d:
+                self.current_strokes_3d[hand_id] = []
 
             # ── Teleport Guard ──
             if len(self.current_strokes[hand_id]) > 0:
@@ -52,9 +57,14 @@ class DrawingEngine:
                     # Treat as a 'pen lift' and start a new segment
                     self.finish_stroke(hand_id)
                     self.current_strokes[hand_id] = [(px, py)]
+                    if self.mode_3d:
+                        self.current_strokes_3d[hand_id] = [[px, py, z_scaled]]
                     return
 
             self.current_strokes[hand_id].append((px, py))
+            if self.mode_3d:
+                # Store relative center based on width/height so 0,0,0 is center of screen for Three.js
+                self.current_strokes_3d[hand_id].append([px - self.width/2, -(py - self.height/2), z_scaled])
         else:
             # If we were drawing, finish the stroke
             self.finish_stroke(hand_id)
@@ -102,10 +112,18 @@ class DrawingEngine:
             else:
                 self.canvas = np.zeros_like(self.canvas)
 
-    def clear(self):
+        if len(self._strokes_3d) > 0:
+            self._strokes_3d.pop()
+
+    def clear_all(self):
         self.canvas = np.zeros_like(self.canvas)
         self.stroke_history = []
         self.current_strokes = {}
+        self._strokes_3d = []
+        self.current_strokes_3d = {}
+
+    def clear(self):
+        self.clear_all()
 
     def get_last_stroke_points(self, hand_id: str = None):
         """Returns the points of the last completed stroke for snapping"""
@@ -141,3 +159,24 @@ class DrawingEngine:
         # Save to history
         self.stroke_history.append(self.canvas.copy())
         if len(self.stroke_history) > 20: self.stroke_history.pop(0)
+
+    def toggle_3d(self):
+        self.mode_3d = not self.mode_3d
+
+    def get_3d_strokes(self):
+        formatted = []
+        for stroke in self._strokes_3d:
+            formatted.append({
+                "points": stroke["points"],
+                "color": stroke["color"],
+                "width": stroke["width"]
+            })
+        for hand_id, pts in self.current_strokes_3d.items():
+            if len(pts) > 1:
+                # RGB format for Three.js instead of BGR
+                formatted.append({
+                    "points": pts,
+                    "color": [self.color[2], self.color[1], self.color[0]],
+                    "width": self.thickness
+                })
+        return formatted

@@ -269,7 +269,8 @@ async def broadcast_loop():
                 "mirrorV": False,
                 "color": getattr(canvas, "color", "#00E5FF") if canvas else "#00E5FF",
                 "colorIndex": 1,
-                "totalColors": 7
+                "totalColors": 7,
+                "mode_3d": getattr(canvas, "mode_3d", False) if canvas else False
             }
             if canvas and hasattr(canvas, "get_state"):
                 system_state.update(canvas.get_state())
@@ -288,6 +289,9 @@ async def broadcast_loop():
                 "shape_candidate": shape_candidate,
                 "systemState": system_state
             })
+
+            if canvas and getattr(canvas, "mode_3d", False) and hasattr(canvas, "get_3d_strokes"):
+                await sio.emit("strokes_3d", canvas.get_3d_strokes())
 
         await asyncio.sleep(1.0 / settings.TARGET_FPS)
 

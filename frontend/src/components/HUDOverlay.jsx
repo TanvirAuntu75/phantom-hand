@@ -6,8 +6,9 @@ import HandStatePanel from './HandStatePanel';
 import BrushModeBar from './BrushModeBar';
 import ColorOrb from './ColorOrb';
 import SnapFeedback from './SnapFeedback';
+import Scene3D from '../three/Scene3D';
 
-const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog, shapeCandidate, snappedShape }) => {
+const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d }) => {
   return (
     <div className="w-screen h-screen overflow-hidden relative selection:bg-primary selection:text-bg">
       <DrawingCanvas
@@ -16,6 +17,9 @@ const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog
         shapeCandidate={shapeCandidate}
       />
       <SnapFeedback snappedShape={snappedShape} />
+      {systemState.mode_3d && (
+        <Scene3D strokes={strokes3d} hands={handData.hands} />
+      )}
 
       <SystemPanel
         isConnected={isConnected}
@@ -27,7 +31,7 @@ const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog
 
       <HandStatePanel hands={handData.hands || []} />
 
-      <BrushModeBar activeMode={systemState.brushMode} />
+      <BrushModeBar activeMode={systemState.brushMode} mode3d={systemState.mode_3d} />
 
       <ColorOrb
         color={systemState.color}
