@@ -171,7 +171,7 @@ class DrawingEngine:
 
         # Polylines needs closed=True for most shapes except lines
         is_closed = shape_name not in ["LINE", "FREEFORM"]
-        cv2.polylines(self.canvas, [pts], is_closed, self.color, self.thickness, self.line_type)
+        cv2.polylines(self.canvas, [pts], is_closed, self.color, self.thickness, cv2.LINE_AA)
 
         # Save to history
         self.stroke_history.append(self.canvas.copy())
@@ -197,3 +197,26 @@ class DrawingEngine:
                     "width": self.thickness
                 })
         return formatted
+
+    def set_color(self, bgr_color):
+        self.color = bgr_color
+
+    def increase_size(self):
+        self.thickness = min(50, self.thickness + 2)
+
+    def decrease_size(self):
+        self.thickness = max(2, self.thickness - 2)
+
+    def toggle_mirror_h(self):
+        self.mirror_h = not getattr(self, "mirror_h", False)
+
+    def next_layer(self):
+        self.active_layer = (getattr(self, "active_layer", 1) % 5) + 1
+
+    @property
+    def mode(self):
+        return getattr(self, "_mode", "PNC")
+
+    @mode.setter
+    def mode(self, value):
+        self._mode = value

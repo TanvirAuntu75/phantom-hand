@@ -9,7 +9,7 @@ import SnapFeedback from './SnapFeedback';
 import Scene3D from '../three/Scene3D';
 import ExportMenu from './ExportMenu';
 
-const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d }) => {
+const HUDOverlay = ({ isConnected, socket, videoFrame, handData, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d }) => {
   const [exportVisible, setExportVisible] = useState(false);
 
   useEffect(() => {
@@ -32,6 +32,15 @@ const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog
       }
     }
   }, [handData, systemState.mode_3d]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleTrigger = (data) => {
+        setExportVisible(true);
+    };
+    socket.on('trigger_export', handleTrigger);
+    return () => socket.off('trigger_export', handleTrigger);
+  }, [socket]);
 
   return (
     <div className="w-screen h-screen overflow-hidden relative selection:bg-primary selection:text-bg">
@@ -57,6 +66,7 @@ const HUDOverlay = ({ isConnected, videoFrame, handData, systemState, gestureLog
       <HandStatePanel hands={handData.hands || []} />
 
       <BrushModeBar activeMode={systemState.brushMode} mode3d={systemState.mode_3d} />
+      <VoiceWave isActive={systemState.voice_active} socket={socket} />
 
       <ColorOrb
         color={systemState.color}

@@ -16,6 +16,7 @@ function App() {
   return (
     <HUDOverlay
       isConnected={isConnected}
+      socket={socket}
       videoFrame={videoFrame}
       handData={consolidatedHandData}
       systemState={systemState}

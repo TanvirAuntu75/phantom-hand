@@ -20,6 +20,7 @@ from backend.core.drawing_engine import DrawingEngine
 from backend.core.command_router import CommandRouter
 from backend.core.shape_recognizer import ShapeRecognizer
 from backend.utils.exporter import Exporter
+from backend.utils.voice_controller import VoiceController
 from fastapi.responses import FileResponse
 
 # The prompt said use "CameraStream (backend/core/hand_tracker.py)".
@@ -81,6 +82,7 @@ cam: CameraStream = None
 router: CommandRouter = None
 recognizer: ShapeRecognizer = None
 exporter = Exporter()
+voice_controller: VoiceController = None
 gesture_states = {}
 
 pipeline_event = Event()
@@ -178,7 +180,10 @@ def pipeline_loop():
                                     }
 
             if router:
-                router.route(tracked_id, gesture_result, landmarks)
+                try:
+                    router.route(tracked_id, gesture_result, landmarks)
+                except Exception as e:
+                    logger.error(f"Error in router.route: {e}")
 
             current_hand_data.append({
                 "id": tracked_id,
@@ -232,7 +237,10 @@ async def startup_event():
     tracker = UltimateHandTracker(model_path="hand_landmarker.task")
     canvas = DrawingEngine(settings.CAMERA_WIDTH, settings.CAMERA_HEIGHT)
     recognizer = ShapeRecognizer()
-    router = CommandRouter(canvas, recognizer)
+
+    global voice_controller
+    voice_controller = VoiceController(canvas, sio=sio, event_loop=main_loop)
+    router = CommandRouter(canvas, recognizer, voice_controller)
 
     # Start Pipeline Thread
     pipeline_event.clear()
@@ -264,16 +272,17 @@ async def broadcast_loop():
             await sio.emit("video_frame", {"image": f"data:image/jpeg;base64,{b64_frame}"})
             # Get current system state from canvas if available
             system_state = {
-                "brushMode": "PNC",
-                "activeLayer": 1,
+                "brushMode": getattr(canvas, "mode", "PNC") if canvas else "PNC",
+                "activeLayer": getattr(canvas, "active_layer", 1) if canvas else 1,
                 "totalLayers": 5,
                 "brushSize": getattr(canvas, "thickness", 12) if canvas else 12,
-                "mirrorH": False,
+                "mirrorH": getattr(canvas, "mirror_h", False) if canvas else False,
                 "mirrorV": False,
                 "color": getattr(canvas, "color", "#00E5FF") if canvas else "#00E5FF",
                 "colorIndex": 1,
                 "totalColors": 7,
-                "mode_3d": getattr(canvas, "mode_3d", False) if canvas else False
+                "mode_3d": getattr(canvas, "mode_3d", False) if canvas else False,
+                "voice_active": voice_controller.active if voice_controller else False
             }
             if canvas and hasattr(canvas, "get_state"):
                 system_state.update(canvas.get_state())

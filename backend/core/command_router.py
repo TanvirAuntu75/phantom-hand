@@ -11,9 +11,10 @@ class CommandRouter:
     Bridge between gesture recognition output and drawing engine actions.
     Maps gesture strings to corresponding drawing engine state modifications.
     """
-    def __init__(self, canvas: Any, recognizer: Any):
+    def __init__(self, canvas: Any, recognizer: Any, voice_controller: Any = None):
         self.canvas = canvas
         self.recognizer = recognizer
+        self.voice_controller = voice_controller
 
         # Debounce dictionary mapping gesture to (last_time_fired, cooldown_seconds)
         self.debounce_state = {}
@@ -199,8 +200,8 @@ class CommandRouter:
             action_fired = True
 
         elif gesture == "PINKY_ONLY" and self._debounce("PINKY_ONLY", now):
-            if hasattr(self.canvas, "toggle_mirror_v"):
-                self.canvas.toggle_mirror_v()
+            if self.voice_controller:
+                self.voice_controller.toggle()
             action_fired = True
 
         if action_fired:
