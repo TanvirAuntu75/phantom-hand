@@ -1,23 +1,55 @@
 import React from 'react';
 
+/**
+ * PHANTOM BRUSH SELECTOR
+ * Tactical segmented control for switching drawing modes and 3D states.
+ */
 const BrushModeBar = ({ activeMode, mode3d }) => {
-  const modes = ['PNC', 'NEO', 'LSR', 'AIR', 'MRK', 'CAL', '3D'];
+  const modes = [
+    { id: 'PNC', label: 'PNC', desc: 'PENCIL' },
+    { id: 'NEO', label: 'NEO', desc: 'NEON_GLOW' },
+    { id: 'LSR', label: 'LSR', desc: 'LASER_BEAM' },
+    { id: 'AIR', label: 'AIR', desc: 'MIST_SPRAY' },
+    { id: 'CHK', label: 'CHK', desc: 'CHALK_DUST' },
+    { id: '3D',  label: '3D',  desc: 'Z_SPATIAL'  }
+  ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-1 z-10 pointer-events-auto bg-bg p-1 border border-inactive">
-      {modes.map((mode) => {
-                // Note: systemState.mode_3d is passed as a separate boolean, but the UI expects activeMode string
-        // We'll fix this in HUDOverlay or here by checking a prop if mode === '3D'
-        // Let's assume BrushModeBar receives mode3d boolean as well.
-        const isActive = (mode === '3D' && mode3d) || (!mode3d && activeMode === mode);
+    <div className="flex items-center space-x-1">
+      {modes.map((m) => {
+        const isActive = (m.id === '3D' && mode3d) || (!mode3d && activeMode === m.id);
+        
         return (
           <div
-            key={mode}
-            className={`w-12 h-8 flex items-center justify-center text-xs tracking-widest cursor-pointer
-              ${isActive ? 'bg-primary text-bg font-bold' : 'bg-inactive text-dim border border-transparent'}
+            key={m.id}
+            className={`
+              group relative flex flex-col items-center justify-center w-14 h-10 
+              border transition-all duration-300 cursor-pointer overflow-hidden
+              ${isActive 
+                ? 'bg-phantom-cyan bg-opacity-20 border-phantom-cyan' 
+                : 'bg-phantom-bg border-phantom-accent hover:border-phantom-cyan hover:bg-phantom-accent hover:bg-opacity-20'
+              }
             `}
           >
-            {mode}
+            {/* ── SELECTION_INDICATOR ──────────────────────────────────────── */}
+            {isActive && (
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-phantom-cyan glow-border shadow-[0_0_10px_#00E5FF]" />
+            )}
+
+            {/* ── MODE_LABEL ─────────────────────────────────────────────── */}
+            <span className={`text-[10px] font-bold tracking-tighter ${isActive ? 'text-phantom-cyan' : 'text-phantom-accent group-hover:text-phantom-cyan'}`}>
+              {m.label}
+            </span>
+
+            {/* ── TOOLTIP_DESCRIPTIVE ─────────────────────────────────────── */}
+            <div className={`
+              absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 
+              bg-phantom-bg border border-phantom-cyan text-[8px] whitespace-nowrap
+              transition-opacity duration-300 pointer-events-none opacity-0 group-hover:opacity-100
+              phantom-bracket
+            `}>
+              {m.desc}
+            </div>
           </div>
         );
       })}

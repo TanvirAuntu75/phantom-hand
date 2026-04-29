@@ -7,15 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Legacy tokens (kept for backward compat)
         bg: "#050A14",
         primary: "#00E5FF",
         secondary: "#FFD700",
-        structure: "#0D47A1",
-        dim: "#4A7FA5",
-        inactive: "#0D2137",
-        leftHand: "#FF00C8",
-        rightHand: "#00E5FF",
-        ghostRed: "#800000"
+        // PHANTOM Design System tokens
+        phantom: {
+          bg:     "#050A14",
+          cyan:   "#00E5FF",
+          accent: "#0D2137",
+          alert:  "#FF3D00",
+        },
       },
       fontFamily: {
         mono: ['"Share Tech Mono"', 'monospace'],

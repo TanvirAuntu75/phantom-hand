@@ -1,74 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-phantom-cyan: #00E5FF;
+  --color-phantom-bg: #050A14;
+  --color-phantom-accent: #003040;
+  --color-phantom-glow: rgba(0, 229, 255, 0.3);
+  --color-phantom-alert: #FF3D00;
+}
+
 @layer base {
   body {
-    @apply bg-bg text-primary font-mono m-0 p-0 overflow-hidden uppercase;
-    cursor: none;
-    -webkit-font-smoothing: none; /* Crisper rendering */
+    background-color: var(--color-phantom-bg);
+    color: var(--color-phantom-cyan);
+    font-family: 'Share Tech Mono', monospace;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Custom Scrollbar for HUD panels */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-phantom-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-phantom-accent);
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  /* Tactical Glass Panel */
+  .phantom-panel {
+    @apply relative bg-opacity-10 backdrop-blur-md border border-phantom-accent;
+    background-color: rgba(0, 48, 64, 0.2);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Corner Brackets Logic */
+  .phantom-bracket {
+    position: relative;
+  }
+  .phantom-bracket::before,
+  .phantom-bracket::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--color-phantom-cyan);
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+  .phantom-bracket::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+  .phantom-bracket::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+  /* HUD Data Readout */
+  .phantom-data {
+    @apply text-xs font-mono;
+    text-shadow: 0 0 8px var(--color-phantom-glow);
   }
 }
 
 @layer utilities {
-  .hud-bracket {
-    position: relative;
-  }
-
-  .hud-bracket::before,
-  .hud-bracket::after {
-    content: '';
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    border: 1px solid theme('colors.primary');
-    pointer-events: none;
-  }
-
-  .hud-bracket::before {
-    top: -1px;
-    left: -1px;
-    border-right: none;
-    border-bottom: none;
-  }
-
-  .hud-bracket::after {
-    bottom: -1px;
-    right: -1px;
-    border-left: none;
-    border-top: none;
-  }
+  .glow-text { text-shadow: 0 0 10px var(--color-phantom-cyan); }
+  .glow-border { box-shadow: 0 0 15px var(--color-phantom-glow); }
 }
 
-/* Mandatory Scanline Effect */
-body::after {
-  content: " ";
-  display: block;
-  position: absolute;
+/* Background Tactical Grid */
+.phantom-grid {
+  position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
-  right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 9999;
-  background-size: 100% 2px, 3px 100%;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(0, 48, 64, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 48, 64, 0.15) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: 1;
   pointer-events: none;
-  animation: scanlines 10s linear infinite;
-  opacity: 0.15;
 }
 
-@keyframes scanlines {
-  0% {
-    background-position: 0 0, 0 0;
-  }
-  100% {
-    background-position: 0 100%, 0 0;
-  }
+/* Moving Scanline */
+.phantom-scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 229, 255, 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 100% 4px;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.1;
+  animation: scanlineMove 8s linear infinite;
 }
 
-/* Faster default transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+/* Vignette Effect */
+.phantom-vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.8) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes scanlineMove {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Pulsing Data Animation */
+@keyframes pulseData {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-data {
+  animation: pulseData 2s ease-in-out infinite;
 }

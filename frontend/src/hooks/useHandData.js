@@ -1,24 +1,33 @@
 import { useState, useEffect } from 'react';
 
+/**
+ * PHANTOM DATA HOOK
+ * Orchestrates real-time state synchronization between the vision backend 
+ * and the tactical HUD frontend via Socket.IO.
+ */
 export const useHandData = (socket) => {
   const [videoFrame, setVideoFrame] = useState(null);
-
-  // Expose parsed hand data
   const [hands, setHands] = useState([]);
-  const [fps, setFps] = useState(0);
   const [shapeCandidate, setShapeCandidate] = useState(null);
   const [snappedShape, setSnappedShape] = useState(null);
   const [gestureLog, setGestureLog] = useState([]);
   const [strokes3d, setStrokes3d] = useState([]);
+  
+  // Dedicated telemetry state for HUD diagnostics
+  const [telemetry, setTelemetry] = useState({
+    fps: 0,
+    latency: { tracking: 0, gesture: 0, total: 0 },
+    system: { cpu: 0, mem: 0 }
+  });
 
-  // Default system state fallback
+  // System configuration state
   const [systemState, setSystemState] = useState({
-    brushMode: 'PNC',
+    brushMode: 'BASIC',
     activeLayer: 1,
     totalLayers: 5,
     brushSize: 12,
-    mirrorH: false,
-    mirrorV: false,
+    mode_3d: false,
+    voice_active: false,
     color: '#00E5FF',
     colorIndex: 1,
     totalColors: 7
@@ -27,72 +36,78 @@ export const useHandData = (socket) => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleVideoFrame = (data) => {
-      setVideoFrame(data.image);
-    };
-
-    const handleHandData = (data) => {
-      setFps(data.fps || 0);
-
-      if (data.hands) {
-        setHands(data.hands);
+    // ── UNIFIED_SYNC_STREAM ───────────────────────────────────────────
+    const handleSyncFrame = (data) => {
+      // 1. Update Video
+      if (data.image) setVideoFrame(data.image);
+      
+      // 2. Update Performance Stats
+      if (data.stats) {
+        setTelemetry({
+          fps: data.stats.fps || 0,
+          latency: data.stats.latency || { tracking: 0, gesture: 0, total: 0 },
+          system: data.stats.system || { cpu: 0, mem: 0 }
+        });
       }
 
+      // 3. Update Hand State
+      if (data.hands) {
+        setHands(data.hands);
+        
+        // Log valid gestures
+        data.hands.forEach(hand => {
+          if (hand.gesture && hand.gesture !== 'HOVER') {
+            setGestureLog(prev => {
+              if (prev.length > 0 && prev[0] === hand.gesture) return prev;
+              return [hand.gesture, ...prev].slice(0, 10);
+            });
+          }
+        });
+      }
+
+      // 4. Update Shape Candidate
       if (data.shape_candidate) {
         setShapeCandidate(data.shape_candidate);
       } else {
         setShapeCandidate(null);
       }
 
-      if (data.systemState || data.canvas_state) {
-        setSystemState(data.systemState || data.canvas_state);
-      }
-
-      // Update gesture log
-      if (data.hands && data.hands.length > 0) {
-        data.hands.forEach(hand => {
-          if (hand.gesture && hand.gesture !== 'HOVER') {
-             setGestureLog(prev => {
-                const now = new Date();
-                const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-                const entry = `${timeString} - ${hand.gesture}`;
-
-                // Don't add if it's exactly the same as the last entry
-                if (prev.length > 0 && prev[0].split(' - ')[1] === hand.gesture) {
-                    return prev;
-                }
-
-                return [entry, ...prev].slice(0, 8);
-             });
-          }
-        });
+      // 5. Update System Config
+      if (data.systemState) {
+        setSystemState(data.systemState);
       }
     };
 
+    // ── EVENT_TRIGGERS (Remain separate as they are rare) ─────────────
     const handleShapeSnapped = (data) => {
       setSnappedShape(data);
-      // Clear after 2 seconds
-      setTimeout(() => {
-        setSnappedShape(null);
-      }, 2000);
+      setTimeout(() => setSnappedShape(null), 2000);
     };
 
     const handleStrokes3d = (data) => {
       setStrokes3d(data);
     };
 
-    socket.on('video_frame', handleVideoFrame);
-    socket.on('hand_data', handleHandData);
+    // Socket registration
+    socket.on('sync_frame', handleSyncFrame);
     socket.on('shape_snapped', handleShapeSnapped);
     socket.on('strokes_3d', handleStrokes3d);
 
     return () => {
-      socket.off('video_frame', handleVideoFrame);
-      socket.off('hand_data', handleHandData);
+      socket.off('sync_frame', handleSyncFrame);
       socket.off('shape_snapped', handleShapeSnapped);
       socket.off('strokes_3d', handleStrokes3d);
     };
   }, [socket]);
 
-  return { videoFrame, hands, fps, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d };
+  return { 
+    videoFrame, 
+    hands, 
+    telemetry, 
+    systemState, 
+    gestureLog, 
+    shapeCandidate, 
+    snappedShape, 
+    strokes3d 
+  };
 };

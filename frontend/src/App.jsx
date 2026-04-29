@@ -3,22 +3,35 @@ import HUDOverlay from './components/HUDOverlay';
 import { useSocket } from './hooks/useSocket';
 import { useHandData } from './hooks/useHandData';
 
+/**
+ * PHANTOM APPLICATION KERNEL
+ * Entry point for the frontend interface. 
+ * Orchestrates socket connection and data distribution to the HUD.
+ */
 function App() {
-  // Use relative path for production (Docker), localhost for dev
-  const socketUrl = import.meta.env.PROD ? '' : 'http://localhost:8000';
-
+  // Connection configuration
+  const socketUrl = import.meta.env.PROD ? '' : 'http://localhost:8080';
   const { socket, isConnected } = useSocket(socketUrl);
-  const { videoFrame, handData, fps, systemState, gestureLog, shapeCandidate, snappedShape, strokes3d } = useHandData(socket);
-
-  // Re-map fps into handData structure to avoid prop drilling issues in HUDOverlay if it relies on handData.fps
-  const consolidatedHandData = { ...handData, fps: fps };
+  
+  // Data ingestion hook
+  const { 
+    videoFrame, 
+    hands, 
+    telemetry, 
+    systemState, 
+    gestureLog, 
+    shapeCandidate, 
+    snappedShape, 
+    strokes3d 
+  } = useHandData(socket);
 
   return (
     <HUDOverlay
       isConnected={isConnected}
       socket={socket}
       videoFrame={videoFrame}
-      handData={consolidatedHandData}
+      hands={hands}
+      telemetry={telemetry}
       systemState={systemState}
       gestureLog={gestureLog}
       shapeCandidate={shapeCandidate}

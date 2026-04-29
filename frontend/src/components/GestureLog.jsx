@@ -1,33 +1,56 @@
 import React from 'react';
 
+/**
+ * PHANTOM EVENT CONSOLE
+ * A scrolling terminal-style log of system events, gesture detections, and commands.
+ */
 const GestureLog = ({ log }) => {
-  // Ensure we always render 8 slots, even if empty
-  const slots = Array.from({ length: 8 }).map((_, i) => log[i] || null);
+  const entries = Array.isArray(log) ? log.slice(0, 10) : [];
 
   return (
-    <div className="fixed bottom-6 left-6 w-64 z-10 pointer-events-auto">
-      <div className="text-dim text-[10px] tracking-widest mb-2 border-b border-inactive pb-1">
-        ACTION LOG
+    <div className="phantom-panel phantom-bracket p-4 h-full flex flex-col pointer-events-auto">
+      {/* ── LOG_HEADER ──────────────────────────────────────────────────── */}
+      <div className="flex justify-between items-center mb-3 border-b border-phantom-accent pb-1">
+        <span className="text-[10px] font-bold tracking-[0.3em]">EVENT_LOG_STREAM</span>
+        <div className="flex space-x-1">
+          <div className="w-1 h-1 bg-phantom-cyan rounded-full animate-pulse" />
+          <div className="w-1 h-1 bg-phantom-cyan rounded-full animate-pulse [animation-delay:200ms]" />
+        </div>
       </div>
-      <div className="space-y-[2px] flex flex-col-reverse">
-        {slots.map((entry, index) => {
-          // Newest at index 0 (bottom of the UI stack due to flex-col-reverse or manual mapping)
-          // Actually, we want newest at the bottom, fading out towards the top.
-          // If log[0] is the newest, then index 0 should have highest opacity.
-          const opacity = Math.max(0.1, 1 - (index * 0.15));
 
-          return (
-            <div
-              key={index}
-              className="text-[11px] tracking-wider h-4"
-              style={{
-                color: entry ? `rgba(0, 229, 255, ${opacity})` : 'transparent'
-              }}
-            >
-              {entry || "---"}
-            </div>
-          );
-        })}
+      {/* ── LOG_STREAM ──────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col-reverse space-y-reverse space-y-1 overflow-hidden font-mono">
+        {entries.length === 0 ? (
+          <div className="text-[10px] text-phantom-accent italic opacity-30">
+            WAITING_FOR_INPUT...
+          </div>
+        ) : (
+          entries.map((entry, index) => {
+            const opacity = Math.max(0.2, 1 - (index * 0.1));
+            // entry is now just the gesture string from the hook
+            const isCommand = typeof entry === 'string' && (
+              entry.includes('CLEAR') || entry.includes('UNDO') || entry.includes('REDO')
+            );
+            return (
+              <div 
+                key={index} 
+                className="text-[10px] flex items-start space-x-2 whitespace-nowrap"
+                style={{ opacity }}
+              >
+                <span className={`shrink-0 ${isCommand ? 'text-white' : 'text-phantom-cyan'}`}>
+                  {isCommand ? '[EXE_OK]' : '[GESTURE]'}
+                </span>
+                <span className="truncate uppercase font-bold">{entry}</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── FOOTER_STATUS ───────────────────────────────────────────────── */}
+      <div className="mt-3 text-[8px] text-phantom-accent flex justify-between opacity-50">
+        <span>STRM_ID: 0x8842</span>
+        <span className="animate-pulse">_SYNCED_</span>
       </div>
     </div>
   );

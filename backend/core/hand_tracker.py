@@ -2,308 +2,223 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-from threading import Thread
-from queue import Queue
+import logging
+from threading import Thread, Lock
+from typing import Dict, List, Optional, Tuple, Set
+
+# --- Mediapipe Components ---
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-# --- Local Modules ---
+# --- Local Engine Components ---
 from core.kalman_filter import LandmarkSmoother
 from core.ghost_engine import GhostHand
 
+# --- Configuration & Logger ---
+logger = logging.getLogger("phantom_hand")
+
+class HandIdentity:
+    """
+    NEURAL_IDENTITY_CONTAINER
+    Maintains persistent state for a specific hand (Left/Right).
+    """
+    def __init__(self, label: str):
+        self.label: str = label
+        self.smoother: LandmarkSmoother = LandmarkSmoother()
+        self.ghost: GhostHand = GhostHand(max_ghost_frames=15)
+        self.last_normalized_tip: Optional[np.ndarray] = None
+        self.signal_loss_frames: int = 0
+        self.is_active: bool = False
+
+    def reset(self) -> None:
+        """System reset for specific identity."""
+        self.smoother.reset()
+        self.last_normalized_tip = None
+        self.signal_loss_frames = 0
+        self.is_active = False
+
 class UltimateHandTracker:
-    def __init__(self, model_path='hand_landmarker.task'):
-        # ── Mediapipe Setup ───────────────────────────────────────────────────
-        base_options = python.BaseOptions(model_asset_path=model_path)
-        options = vision.HandLandmarkerOptions(
-            base_options=base_options,
-            running_mode=vision.RunningMode.LIVE_STREAM,
-            num_hands=2,
-            min_hand_detection_confidence=0.7,
-            min_hand_presence_confidence=0.7,
-            min_tracking_confidence=0.7,
-            result_callback=self._ai_callback
-        )
-        self.detector = vision.HandLandmarker.create_from_options(options)
-        
-        # ── State Management ──────────────────────────────────────────────────
-        self._hand_data = []         # Most recent AI output
-        self._fps_history = []
-        self._last_time = time.time()
-        
-        # Identity Lock for Single-Hand Mode
-        self._locked_label = None          # "Left" or "Right" — the chosen hand
-        self._last_known_tip = None        # Normalised (x, y) of index tip [8]
-        self._identity_lost_frames = 0    # Consecutive frames without our label
-        self._MAX_IDENTITY_LOST = 15       # Increased to 0.25s to survive fast motion
-        
-        # Max normalised distance a tip is allowed to jump in ONE frame.
-        self._MAX_JUMP = 0.35              # Increased for fast writing
-        # ──────────────────────────────────────────────────────────────────────
-        
-        # Engines
-        self.smoother = LandmarkSmoother()
-        self.ghost = GhostHand(max_ghost_frames=12)
+    """
+    VISION_PROCESSING_KERNEL
+    The core engine for zero-latency hand landmarker detection and tracking.
+    Integrates MediaPipe Tasks with custom Optical Flow fallbacks and Kalman filters.
+    """
+    
+    def __init__(self, model_path: str = 'hand_landmarker.task'):
+        # --- MediaPipe Initialisation ---
+        try:
+            base_options = python.BaseOptions(model_asset_path=model_path)
+            options = vision.HandLandmarkerOptions(
+                base_options=base_options,
+                running_mode=vision.RunningMode.LIVE_STREAM,
+                num_hands=2,
+                min_hand_detection_confidence=0.75,
+                min_hand_presence_confidence=0.75,
+                min_tracking_confidence=0.75,
+                result_callback=self._neural_callback
+            )
+            self.detector = vision.HandLandmarker.create_from_options(options)
+            logger.info("NEURAL_ENGINE_READY: MediaPipe HandLandmarker initialised.")
+        except Exception as e:
+            logger.critical(f"NEURAL_ENGINE_FAILURE: Could not load model at {model_path}. Error: {e}")
+            raise
 
-    def _ai_callback(self, result: vision.HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
-        """ The pure AI thread. Executes only when the neural network spits out a result. """
-        parsed_data = []
+        # --- State Management ---
+        self._raw_neural_data: List[Dict] = []
+        self._data_lock: Lock = Lock()
+        
+        # Identity Persistence
+        self.identities: Dict[str, HandIdentity] = {
+            "Left": HandIdentity("Left"),
+            "Right": HandIdentity("Right")
+        }
+        
+        # Constants for Identity Verification
+        self._MAX_JUMP_THRESHOLD: float = 0.35  # Max normalised Euclidean distance per frame
+        self._SIGNAL_LOSS_LIMIT: int = 15        # Frames to wait before identity purge
+        
+        # Telemetry
+        self._fps_buffer: List[float] = []
+        self._last_perf_check: float = time.time()
+
+    def _neural_callback(self, result: vision.HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int) -> None:
+        """
+        NEURAL_INTERRUPT_HANDLER
+        Executed by the MediaPipe worker thread upon landmark computation.
+        """
+        parsed_batch = []
         if result.hand_landmarks:
-            for hand_idx in range(len(result.hand_landmarks)):
-                landmarks = result.hand_landmarks[hand_idx]
-                parsed_lm = [(lm.x, lm.y, lm.z) for lm in landmarks]
-
-                # We trust MediaPipe's internal classification.
-                # If it's consistently swapped, we will handle it in the HUD,
-                # but manual flipping in the logic often causes more confusion.
-                label = result.handedness[hand_idx][0].category_name
-
-                parsed_data.append({
-                    "landmarks": parsed_lm,
-                    "handedness": label
+            for i, landmarks in enumerate(result.hand_landmarks):
+                # MediaPipe handedness is relative to the camera
+                label = result.handedness[i][0].category_name
+                
+                # Convert landmarks to NumPy for efficient downstream processing
+                coords = np.array([(lm.x, lm.y, lm.z) for lm in landmarks], dtype=np.float32)
+                
+                parsed_batch.append({
+                    "label": label,
+                    "landmarks": coords,
+                    "confidence": result.handedness[i][0].score
                 })
         
-        self._hand_data = parsed_data
+        with self._data_lock:
+            self._raw_neural_data = parsed_batch
 
-    def _pick_locked_hand(self):
+    def process_frame(self, frame: np.ndarray) -> Dict[str, Tuple[List[Tuple[float, float, float]], bool]]:
         """
-        If multiple hands exist, we must stick to ONE to prevent drawing jitter.
+        PIPELINE_EXECUTION_LOOP
+        Main entry point for tracking. Processes a single BGR frame.
+        
+        Returns:
+            Dict mapping "Left"/"Right" to (smoothed_landmarks, is_ghost_flag).
         """
-        if not self._hand_data:
-            return None
-
-        # 1. If we have a lock, look for that specific label
-        if self._locked_label:
-            for h in self._hand_data:
-                if h["handedness"] == self._locked_label:
-                    # Identity verification: don't jump to a hand across the screen
-                    if self._last_known_tip is not None:
-                        current_tip = h["landmarks"][8][:2]
-                        dist = np.linalg.norm(np.array(current_tip) - np.array(self._last_known_tip))
-                        if dist < self._MAX_JUMP:
-                            self._identity_lost_frames = 0
-                            self._last_known_tip = current_tip
-                            return h
-            
-            # If we reached here, our locked hand is missing or jumped too far
-            self._identity_lost_frames += 1
-            if self._identity_lost_frames < self._MAX_IDENTITY_LOST:
-                return "LOST" # Signal ghost fallback
-            else:
-                self._locked_label = None # Release lock
-                self._last_known_tip = None
-
-        # 2. No lock or lock lost -> Pick the highest confidence hand
-        # For simplicity, we just pick the first one available
-        best_hand = self._hand_data[0]
-        self._locked_label = best_hand["handedness"]
-        self._last_known_tip = best_hand["landmarks"][8][:2]
-        self._identity_lost_frames = 0
-        return best_hand
-
-    def process_frame(self, frame, w, h):
-        """
-        The main pipeline loop.
-        """
+        h, w = frame.shape[:2]
         timestamp = int(time.time() * 1000)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        
+        # 1. Dispatch to Neural Engine
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
         self.detector.detect_async(mp_image, timestamp)
-
-        hand = self._pick_locked_hand()
         
-        if hand == "LOST" or hand is None:
-            # AI missed it or locked hand is gone -> Fallback to Ghost Engine (Optical Flow)
-            ghost_lms = self.ghost.predict(frame)
-            if ghost_lms:
-                # Ghost data is in pixels, convert back to normalized for the smoother
-                norm_ghost = [(p[0]/w, p[1]/h, 0.0) for p in ghost_lms]
-                smoothed = self.smoother.smooth(norm_ghost)
-                return smoothed, True
-            return None, False
-
-        # Fresh AI Data available
-        lms = hand["landmarks"]
+        # 2. Acquire thread-safe AI data
+        with self._data_lock:
+            current_neural_signals = self._raw_neural_data.copy()
+            
+        results: Dict[str, Tuple[List[Tuple[float, float, float]], bool]] = {}
+        detected_this_frame: Set[str] = set()
         
-        # Update Ghost with fresh pixel-space data for the next frame
-        pixel_lms = [(lm[0]*w, lm[1]*h) for lm in lms]
-        self.ghost.update_real_data(frame, pixel_lms)
-
-        # Apply Kalman Smoothing
-        smoothed = self.smoother.smooth(lms)
-        return smoothed, False
-
-    def get_fps(self):
-        curr = time.time()
-        dt = curr - self._last_time
-        self._last_time = curr
-        self._fps_history.append(1.0 / dt if dt > 0 else 0)
-        if len(self._fps_history) > 30: self._fps_history.pop(0)
-        return sum(self._fps_history) / len(self._fps_history)
-
-    # ── DUAL-HAND API ─────────────────────────────────────────────────────────
-    def get_all_hands(self, frame, w, h):
-        """
-        Track EVERY hand the AI sees (up to 2) independently.
-        Returns a dict:  { "Left": (smoothed_lms, is_ghost),
-                           "Right": (smoothed_lms, is_ghost) }
-        Each hand has its own Kalman smoother, ghost engine, and jump guard
-        stored in self._per_hand[label].
-        """
-        if not hasattr(self, '_per_hand'):
-            self._per_hand = {}   # label -> {smoother, ghost, last_tip}
-
-        results = {}
-        seen = set()
-
-        # ── Update from live AI data ──────────────────────────────────────────
-        for hand_raw in self._hand_data:
-            label = hand_raw["handedness"]
-            lms   = hand_raw["landmarks"]
-            tip   = np.array(lms[8][:2])
-            seen.add(label)
-
-            # First time seeing this label → create its state
-            if label not in self._per_hand:
-                self._per_hand[label] = {
-                    "smoother":  LandmarkSmoother(),
-                    "ghost":     GhostHand(max_ghost_frames=20),
-                    "last_tip":  None,
-                    "lost":      0,
-                }
-
-            state = self._per_hand[label]
-
-            # Teleport guard: reject impossible jumps (hand-swap artefact)
-            if state["last_tip"] is not None:
-                if np.linalg.norm(tip - state["last_tip"]) > self._MAX_JUMP:
-                    continue   # drop this frame for this label
-
-            state["last_tip"] = tip
-            state["lost"]     = 0
-
-            # Feed optical-flow ghost with fresh pixels
-            pixel_lm = [(lm[0] * w, lm[1] * h) for lm in lms]
-            state["ghost"].update_real_data(frame, pixel_lm)
-
-            smoothed = state["smoother"].smooth(lms)
+        # 3. Synchronize Identities with Neural Signals
+        for signal in current_neural_signals:
+            label = signal["label"]
+            lms = signal["landmarks"]
+            tip = lms[8][:2] # Index finger tip
+            
+            identity = self.identities[label]
+            
+            # Spatial Identity Check (Jump Guard)
+            if identity.last_normalized_tip is not None:
+                dist = np.linalg.norm(tip - identity.last_normalized_tip)
+                if dist > self._MAX_JUMP_THRESHOLD:
+                    # Potential tracking swap artefact; ignore this signal
+                    continue
+            
+            # Update Identity State
+            identity.last_normalized_tip = tip
+            identity.signal_loss_frames = 0
+            identity.is_active = True
+            detected_this_frame.add(label)
+            
+            # Feed Ghost Engine for future fallbacks
+            pixel_lms = [(pt[0] * w, pt[1] * h) for pt in lms]
+            identity.ghost.update_real_data(frame, pixel_lms)
+            
+            # Smooth and Record
+            smoothed = identity.smoother.smooth(lms.tolist())
             results[label] = (smoothed, False)
 
-        # ── Ghost fallback for hands that disappeared this frame ──────────────
-        for label, state in self._per_hand.items():
-            if label not in seen:
-                state["lost"] += 1
-                if state["lost"] < self._MAX_IDENTITY_LOST:
-                    ghost_lms = state["ghost"].predict(frame)
-                    if ghost_lms:
-                        # Convert pixels -> normalized
-                        norm_ghost = [(p[0]/w, p[1]/h, 0.0) for p in ghost_lms]
-                        smoothed = state["smoother"].smooth(norm_ghost)
+        # 4. Handle Missing Signals via Ghost Engine Fallback
+        for label, identity in self.identities.items():
+            if label not in detected_this_frame:
+                identity.signal_loss_frames += 1
+                
+                if identity.signal_loss_frames < self._SIGNAL_LOSS_LIMIT:
+                    ghost_pixel_coords = identity.ghost.predict(frame)
+                    if ghost_pixel_coords is not None:
+                        # Normalise back for consistent output format
+                        norm_ghost = [(pt[0]/w, pt[1]/h, 0.0) for pt in ghost_pixel_coords]
+                        smoothed = identity.smoother.smooth(norm_ghost)
                         results[label] = (smoothed, True)
                 else:
-                    # Permanent loss, clear smoother to avoid state drag
-                    state["smoother"].reset()
-                    state["last_tip"] = None
-
+                    # Signal lost beyond recovery limit
+                    if identity.is_active:
+                        logger.info(f"SIGNAL_TERMINATED: {label} hand identity purged.")
+                        identity.reset()
+                        
         return results
 
-if __name__ == "__main__":
-    import cv2
-    from core.drawing_engine import DrawingEngine
-    from core.gesture_state import GestureState
+    def get_fps(self) -> float:
+        """
+        Calculates moving average FPS for the vision pipeline.
+        """
+        now = time.time()
+        delta = now - self._last_perf_check
+        self._last_perf_check = now
+        
+        if delta > 0:
+            self._fps_buffer.append(1.0 / delta)
+        
+        if len(self._fps_buffer) > 30:
+            self._fps_buffer.pop(0)
+            
+        return sum(self._fps_buffer) / len(self._fps_buffer) if self._fps_buffer else 0.0
 
-    # --- Setup ---
+if __name__ == "__main__":
+    # Self-test block
+    logging.basicConfig(level=logging.INFO)
     cap = cv2.VideoCapture(0)
     tracker = UltimateHandTracker()
-    canvas = DrawingEngine(1280, 720)
-    gesture_states = {} # label -> GestureState
-
-    print("Initializing Ultimate Vision Engine...")
-
-    # ── Visual identity per hand ──────────────────────────────────────────────
-    # Cyan = Right hand  |  Magenta = Left hand
-    HAND_COLORS = {
-        "Right": (255, 255, 0),   # Bright Yellow (BGR - wait, that's Cyan?)
-                                  # Let's use standard BGR:
-                                  # Cyan: (255, 255, 0) is actually Yellow in BGR.
-                                  # Let's fix the comments and use vibrant colors.
-        "Right": (255, 229, 0),   # Electric Cyan
-        "Left":  (255, 0, 255),   # Vibrant Magenta
-    }
-
-    # 1. Zero-latency camera
-    class CameraStream:
-        def __init__(self):
-            self.stream = cv2.VideoCapture(0)
-            self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-            self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-            self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            self.frame = None
-            self.stopped = False
-        def start(self):
-            Thread(target=self.update, args=()).start()
-            return self
-        def update(self):
-            while not self.stopped:
-                _, self.frame = self.stream.read()
-        def read(self):
-            if self.frame is not None:
-                return cv2.flip(self.frame, 1)
-            return self.frame
-        def stop(self):
-            self.stopped = True
-
-    cam = CameraStream().start()
-
+    
     while True:
-        frame = cam.read()
-        if frame is None: continue
+        ret, frame = cap.read()
+        if not ret: break
         
+        frame = cv2.flip(frame, 1)
         h, w = frame.shape[:2]
         
-        # Get data for ALL hands
-        all_hands = tracker.get_all_hands(frame, w, h)
+        tracks = tracker.process_frame(frame)
         
-        # Process each hand for gestures and drawing
-        for label, (landmarks, is_ghost) in all_hands.items():
-            if label not in gesture_states:
-                gesture_states[label] = GestureState()
+        for label, (lms, ghost) in tracks.items():
+            color = (0, 255, 255) if label == "Right" else (255, 0, 255)
+            if ghost: color = (100, 100, 100)
             
-            # 1. Get State
-            state = gesture_states[label].get_state(landmarks)
-            
-            # 2. Update Canvas
-            # We use index tip (8) for drawing
-            canvas.update(state, landmarks[8][:2], hand_id=label)
-
-            # 3. HUD Overlay (Dots)
-            color = HAND_COLORS.get(label, (255, 255, 255))
-            for i, lm in enumerate(landmarks):
-                px = int(lm[0] * w)
-                py = int(lm[1] * h)
+            for pt in lms:
+                cv2.circle(frame, (int(pt[0]*w), int(pt[1]*h)), 3, color, -1)
                 
-                # Ghost hands are drawn with transparency
-                alpha = 0.4 if is_ghost else 1.0
-                cv2.circle(frame, (px, py), 4, color, -1)
-                
-            # Add Label
-            tx = int(landmarks[0][0] * w)
-            ty = int(landmarks[0][1] * h) - 20
-            cv2.putText(frame, f"{label} {'(GHOST)' if is_ghost else ''}", (tx, ty),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-
-        # Composite Canvas
-        final_frame = canvas.render(frame)
-        
-        # System HUD
-        cv2.putText(final_frame, f"ENGINE FPS: {int(tracker.get_fps())}", (20, 40), 
+        cv2.putText(frame, f"FPS: {int(tracker.get_fps())}", (10, 30), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-        cv2.imshow("Phantom Hand - Vision Engine v2.1", final_frame)
+        cv2.imshow("TEST_KERNEL", frame)
         
-        key = cv2.waitKey(1)
-        if key == ord('q'): break
-        if key == ord('c'): canvas.clear()
-        if key == ord('z'): canvas.undo()
-
-    cam.stop()
+        if cv2.waitKey(1) == 27: break
+        
+    cap.release()
     cv2.destroyAllWindows()

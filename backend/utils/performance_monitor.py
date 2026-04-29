@@ -1,106 +1,94 @@
 import time
 import psutil
 import asyncio
-from collections import deque
 import logging
+from collections import deque
+from typing import Dict, Any, List, Optional
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("phantom_hand")
 
 class PerformanceMonitor:
-    def __init__(self, sio=None, event_loop=None):
-        self.sio = sio
-        self.event_loop = event_loop
+    """
+    PHANTOM HAND Performance Kernel.
+    Monitors system health, vision pipeline latency, and tracking stability.
+    Provides telemetry for the JARVIS-style HUD.
+    """
+    def __init__(self):
+        # Sliding windows for smooth metrics
         self._fps_window = deque(maxlen=60)
-        self._track_lat_window = deque(maxlen=60)
-        self._gest_lat_window = deque(maxlen=60)
-        self._sock_lat_window = deque(maxlen=60)
-
-        self.last_frame_time = time.time()
-        self.consecutive_low_fps_start = None
+        self._latencies: Dict[str, deque] = {
+            "tracking": deque(maxlen=60),
+            "gesture": deque(maxlen=60),
+            "composition": deque(maxlen=60),
+            "total": deque(maxlen=60)
+        }
+        
+        self.last_frame_time = time.perf_counter()
         self._cached_cpu = 0.0
         self._cached_mem = 0.0
         self._last_sys_check = 0.0
+        
+        # Stability metrics
+        self._confidence_window = deque(maxlen=30)
+        self.start_time = time.time()
 
-    def mark_frame(self, tracking_ms: float, gesture_ms: float, socket_ms: float):
-        now = time.time()
+    def record_frame(self, 
+                    tracking_ms: float, 
+                    gesture_ms: float, 
+                    comp_ms: float, 
+                    confidence: float = 1.0):
+        """Records metrics for a single vision pipeline iteration."""
+        now = time.perf_counter()
         dt = now - self.last_frame_time
         self.last_frame_time = now
 
         if dt > 0:
             self._fps_window.append(1.0 / dt)
 
-        self._track_lat_window.append(tracking_ms)
-        self._gest_lat_window.append(gesture_ms)
-        self._sock_lat_window.append(socket_ms)
+        self._latencies["tracking"].append(tracking_ms)
+        self._latencies["gesture"].append(gesture_ms)
+        self._latencies["composition"].append(comp_ms)
+        self._latencies["total"].append(tracking_ms + gesture_ms + comp_ms)
+        self._confidence_window.append(confidence)
 
-        self._check_alerts()
+        self._check_system_health()
 
-    @property
-    def fps(self) -> float:
-        return sum(self._fps_window) / len(self._fps_window) if self._fps_window else 0.0
-
-    @property
-    def avg_tracking_latency_ms(self) -> float:
-        return sum(self._track_lat_window) / len(self._track_lat_window) if self._track_lat_window else 0.0
-
-    @property
-    def avg_gesture_latency_ms(self) -> float:
-        return sum(self._gest_lat_window) / len(self._gest_lat_window) if self._gest_lat_window else 0.0
-
-    def _update_sys_stats(self):
-        now = time.time()
+    def _check_system_health(self):
+        """Throttled check for CPU/MEM to minimize overhead."""
+        now = time.perf_counter()
         if now - self._last_sys_check > 1.0:
-            # psutil calls can be blocking/heavy, only do it once per second
             process = psutil.Process()
             self._cached_mem = process.memory_info().rss / (1024 * 1024)
             self._cached_cpu = psutil.cpu_percent(interval=None)
             self._last_sys_check = now
+            
+            # Log critical alerts
+            if self._cached_cpu > 90:
+                logger.warning(f"SYSTEM_ALERT: CRITICAL_CPU_USAGE [{self._cached_cpu}%]")
+            if self._cached_mem > 1024:
+                logger.warning(f"SYSTEM_ALERT: HIGH_MEMORY_USAGE [{self._cached_mem:.1f} MB]")
 
-    @property
-    def memory_mb(self) -> float:
-        self._update_sys_stats()
-        return self._cached_mem
+    def get_heartbeat(self) -> Dict[str, Any]:
+        """Generates a comprehensive telemetry packet for the HUD."""
+        def avg(window: deque) -> float:
+            return sum(window) / len(window) if window else 0.0
 
-    @property
-    def cpu_percent(self) -> float:
-        self._update_sys_stats()
-        return self._cached_cpu
-
-    def report(self) -> dict:
         return {
-            "fps": round(self.fps, 1),
-            "tracking_latency_ms": round(self.avg_tracking_latency_ms, 2),
-            "gesture_latency_ms": round(self.avg_gesture_latency_ms, 2),
-            "socket_latency_ms": round(sum(self._sock_lat_window) / len(self._sock_lat_window) if self._sock_lat_window else 0.0, 2),
-            "memory_mb": round(self.memory_mb, 1),
-            "cpu_percent": round(self.cpu_percent, 1)
+            "status": "OPERATIONAL",
+            "uptime": int(time.time() - self.start_time),
+            "telemetry": {
+                "fps": round(avg(self._fps_window), 1),
+                "cpu": round(self._cached_cpu, 1),
+                "memory_mb": round(self._cached_mem, 1)
+            },
+            "latency_ms": {
+                "tracking": round(avg(self._latencies["tracking"]), 2),
+                "gesture": round(avg(self._latencies["gesture"]), 2),
+                "composition": round(avg(self._latencies["composition"]), 2),
+                "total": round(avg(self._latencies["total"]), 2)
+            },
+            "stability": {
+                "signal_quality": round(avg(self._confidence_window) * 100, 1),
+                "jitter_index": round(1.0 / (avg(self._fps_window) + 0.1), 3)
+            }
         }
-
-    def _check_alerts(self):
-        now = time.time()
-        alerts = []
-
-        # 1. FPS check (<20 for 2 seconds)
-        if self.fps > 0 and self.fps < 20:
-            if self.consecutive_low_fps_start is None:
-                self.consecutive_low_fps_start = now
-            elif now - self.consecutive_low_fps_start >= 2.0:
-                alerts.append(f"FPS dropped below 20 ({round(self.fps,1)})")
-        else:
-            self.consecutive_low_fps_start = None
-
-        # 2. Memory check (> 800MB)
-        if self.memory_mb > 800:
-            alerts.append(f"High memory usage: {self.memory_mb:.1f} MB")
-
-        # 3. CPU check (> 85%)
-        if self.cpu_percent > 85:
-            alerts.append(f"High CPU usage: {self.cpu_percent:.1f}%")
-
-        for alert in alerts:
-            logger.warning(f"PERFORMANCE ALERT: {alert}")
-            if self.sio and self.event_loop:
-                asyncio.run_coroutine_threadsafe(
-                    self.sio.emit("performance_alert", {"alert": alert, "timestamp": now}),
-                    self.event_loop
-                )

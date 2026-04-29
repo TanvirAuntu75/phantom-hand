@@ -1,19 +1,21 @@
 import React from 'react';
 
-// MediaPipe hand connections (pairs of landmark indices)
+/**
+ * PHANTOM BIOMETRIC SKELETON
+ * Renders a high-fidelity digital wireframe over tracked hands.
+ * Designed to look like a real-time AI blueprint.
+ */
 const CONNECTIONS = [
-  // Thumb
   [0, 1], [1, 2], [2, 3], [3, 4],
-  // Index
   [0, 5], [5, 6], [6, 7], [7, 8],
-  // Middle
   [5, 9], [9, 10], [10, 11], [11, 12],
-  // Ring
   [9, 13], [13, 14], [14, 15], [15, 16],
-  // Pinky
   [13, 17], [17, 18], [18, 19], [19, 20],
-  [0, 17] // Palm base
+  [0, 17]
 ];
+
+// Normalize landmark: handles both [x,y,z] arrays and {x,y,z} objects
+const getLM = (lm) => Array.isArray(lm) ? { x: lm[0], y: lm[1], z: lm[2] || 0 } : (lm || { x: 0, y: 0, z: 0 });
 
 const HandSkeleton = ({ hands, width, height }) => {
   if (!hands || hands.length === 0) return null;
@@ -25,62 +27,70 @@ const HandSkeleton = ({ hands, width, height }) => {
       height="100%"
       viewBox={`0 0 ${width} ${height}`}
     >
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
       {hands.map((hand) => {
-        if (!hand.landmarks || hand.landmarks.length !== 21) return null;
+        const { landmarks, id, is_ghost } = hand;
+        if (!landmarks || landmarks.length !== 21) return null;
 
-        const isLeft = hand.id.includes('Left') || hand.id.includes('Left') ? true : false;
-        // Default cyan for first hand, magenta for second if not explicitly labeled
-        const isCyan = hand.id.includes('Right') || !isLeft;
-
-        const color = isCyan ? '#00E5FF' : '#FF00C8';
-        const opacity = hand.is_ghost ? 0.3 : 1.0;
+        // Visual properties
+        const color = is_ghost ? 'var(--color-phantom-alert)' : 'var(--color-phantom-cyan)';
+        const opacity = is_ghost ? 0.3 : 0.8;
 
         return (
-          <g key={hand.id} opacity={opacity}>
-            {/* Draw Bones (Lines) */}
+          <g key={id} opacity={opacity} filter="url(#glow)">
+            {/* ── BONE_STRUCTURE ─────────────────────────────────────────── */}
             {CONNECTIONS.map(([startIdx, endIdx], i) => {
-              const start = hand.landmarks[startIdx];
-              const end = hand.landmarks[endIdx];
+              const start = getLM(landmarks[startIdx]);
+              const end = getLM(landmarks[endIdx]);
               return (
                 <line
-                  key={`bone-${i}`}
-                  x1={start[0] * width}
-                  y1={start[1] * height}
-                  x2={end[0] * width}
-                  y2={end[1] * height}
+                  key={`bone-${id}-${i}`}
+                  x1={start.x * width}
+                  y1={start.y * height}
+                  x2={end.x * width}
+                  y2={end.y * height}
                   stroke={color}
                   strokeWidth="1"
-                  strokeOpacity="0.4"
+                  strokeDasharray={is_ghost ? '2,2' : 'none'}
+                  className="transition-all duration-300"
                 />
               );
             })}
 
-            {/* Draw Fingertip Dots (Indices 4, 8, 12, 16, 20) */}
-            {[4, 8, 12, 16, 20].map((idx) => {
-              const lm = hand.landmarks[idx];
+            {/* ── JOINT_NODES ────────────────────────────────────────────── */}
+            {landmarks.map((lm, i) => {
+              const p = getLM(lm);
               return (
                 <circle
-                  key={`tip-${idx}`}
-                  cx={lm[0] * width}
-                  cy={lm[1] * height}
-                  r="6"
-                  fill={color}
+                  key={`joint-${id}-${i}`}
+                  cx={p.x * width}
+                  cy={p.y * height}
+                  r={i % 4 === 0 ? '2.5' : '1.5'}
+                  fill={i === 8 ? 'white' : color}
+                  className={i === 8 ? 'animate-pulse' : ''}
                 />
               );
             })}
 
-            {/* Index Fingertip Ring (Index 8) */}
-            {hand.landmarks[8] && (
-              <circle
-                cx={hand.landmarks[8][0] * width}
-                cy={hand.landmarks[8][1] * height}
-                r="14"
-                fill="none"
-                stroke={color}
-                strokeWidth="2"
-                opacity="1.0"
-              />
-            )}
+            {/* ── INDEX_TARGETING_RING ───────────────────────────────────── */}
+            {landmarks[8] && (() => {
+              const tip = getLM(landmarks[8]);
+              return (
+                <g transform={`translate(${tip.x * width}, ${tip.y * height})`}>
+                  <circle r="12" fill="none" stroke={color} strokeWidth="0.5" strokeDasharray="4,2" />
+                  <circle r="8" fill="none" stroke={color} strokeWidth="1.5" className="animate-pulse" />
+                </g>
+              );
+            })()}
           </g>
         );
       })}

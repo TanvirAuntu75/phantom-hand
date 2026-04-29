@@ -1,131 +1,126 @@
 import speech_recognition as sr
-from threading import Thread
+import threading
 import time
 import logging
 import asyncio
+from typing import Optional, Callable
+from backend.config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("phantom_hand")
 
 class VoiceController:
-    def __init__(self, canvas, sio=None, event_loop=None):
+    """
+    PHANTOM HAND Voice Kernel.
+    Enables hands-free control of the drawing canvas and system state.
+    Uses Google Speech Recognition for high-accuracy command parsing.
+    """
+    def __init__(self, canvas, event_callback: Optional[Callable] = None):
         self.canvas = canvas
-        self.sio = sio
-        self.event_loop = event_loop
+        self.event_callback = event_callback
         self.active = False
         self.recognizer = sr.Recognizer()
-        # Adjust for ambient noise on start
-        self.microphone = None
-        self._thread = None
+        self.microphone: Optional[sr.Microphone] = None
+        self._thread: Optional[threading.Thread] = None
+        self._stop_event = threading.Event()
 
-    def toggle(self):
-        self.active = not self.active
+        # Command Mapping for fuzzy matching
+        self.commands = {
+            "CLEAR": ["clear", "reset", "wipe", "delete everything"],
+            "UNDO": ["undo", "go back", "reverse"],
+            "REDO": ["redo", "forward"],
+            "NEON": ["neon", "glow", "neon mode"],
+            "LASER": ["laser", "beam", "laser mode"],
+            "CHALK": ["chalk", "dust", "chalk mode"],
+            "GHOST": ["ghost", "phantom", "fade"],
+            "AIRBRUSH": ["spray", "airbrush", "mist"],
+            "PENCIL": ["pencil", "basic", "standard"],
+            "MIRROR": ["mirror", "reflection", "flip"],
+            "SAVE": ["save", "export", "download"]
+        }
+
+    def toggle(self, state: Optional[bool] = None):
+        """Activates or deactivates the voice kernel."""
+        self.active = state if state is not None else not self.active
+        
         if self.active:
             if self._thread is None or not self._thread.is_alive():
-                self._thread = Thread(target=self._listen_loop, daemon=True)
+                self._stop_event.clear()
+                self._thread = threading.Thread(target=self._listen_loop, daemon=True, name="Voice-Kernel")
                 self._thread.start()
-            logger.info("Voice Controller ACTIVATED")
+            logger.info("VOICE_KERNEL: SYSTEMS_ONLINE")
         else:
-            logger.info("Voice Controller DEACTIVATED")
+            self._stop_event.set()
+            logger.info("VOICE_KERNEL: SYSTEMS_OFFLINE")
 
-    def _emit(self, event, data):
-        if self.sio and self.event_loop:
-            asyncio.run_coroutine_threadsafe(
-                self.sio.emit(event, data),
-                self.event_loop
-            )
-
-    def _execute_command(self, text):
+    def _execute(self, text: str):
+        """Parses speech text and maps it to engine actions."""
         t = text.lower()
-        cmd_matched = None
+        matched_cmd = None
+        
+        # 1. Action Commands
+        for cmd, synonyms in self.commands.items():
+            if any(syn in t for syn in synonyms):
+                matched_cmd = cmd
+                break
+        
+        if matched_cmd:
+            self._apply_command(matched_cmd)
+        
+        # 2. Color Commands (Fuzzy match from config)
+        for color_name, hex_val in settings.COLOR_PALETTE.items():
+            if color_name.lower() in t:
+                self.canvas.set_color(hex_val)
+                matched_cmd = f"COLOR_{color_name}"
+        
+        # 3. Layer Commands ("Layer 1", "Layer 2", etc.)
+        if "layer" in t:
+            for i in range(1, settings.MAX_LAYERS + 1):
+                if str(i) in t:
+                    self.canvas.switch_layer(i)
+                    matched_cmd = f"LAYER_{i}"
 
-        if "clear" in t:
-            if hasattr(self.canvas, "clear_all"): self.canvas.clear_all()
-            cmd_matched = "CLEAR"
-        elif "undo" in t:
-            if hasattr(self.canvas, "undo"): self.canvas.undo()
-            cmd_matched = "UNDO"
-        elif "redo" in t:
-            if hasattr(self.canvas, "redo"): self.canvas.redo()
-            cmd_matched = "REDO"
-        elif "red" in t:
-            if hasattr(self.canvas, "set_color"): self.canvas.set_color((0, 0, 255))
-            cmd_matched = "COLOR: RED"
-        elif "blue" in t:
-            if hasattr(self.canvas, "set_color"): self.canvas.set_color((255, 0, 0))
-            cmd_matched = "COLOR: BLUE"
-        elif "green" in t:
-            if hasattr(self.canvas, "set_color"): self.canvas.set_color((0, 255, 0))
-            cmd_matched = "COLOR: GREEN"
-        elif "cyan" in t:
-            if hasattr(self.canvas, "set_color"): self.canvas.set_color((255, 229, 0))
-            cmd_matched = "COLOR: CYAN"
-        elif "white" in t:
-            if hasattr(self.canvas, "set_color"): self.canvas.set_color((255, 255, 255))
-            cmd_matched = "COLOR: WHITE"
-        elif "bigger" in t:
-            if hasattr(self.canvas, "increase_size"): self.canvas.increase_size()
-            cmd_matched = "SIZE UP"
-        elif "smaller" in t:
-            if hasattr(self.canvas, "decrease_size"): self.canvas.decrease_size()
-            cmd_matched = "SIZE DOWN"
-        elif "pencil" in t:
-            self.canvas.mode = "PNC"
-            cmd_matched = "MODE: PENCIL"
-        elif "neon" in t:
-            self.canvas.mode = "NEO"
-            cmd_matched = "MODE: NEON"
-        elif "laser" in t:
-            self.canvas.mode = "LSR"
-            cmd_matched = "MODE: LASER"
-        elif "spray" in t:
-            self.canvas.mode = "AIR"
-            cmd_matched = "MODE: SPRAY"
-        elif "mirror" in t:
-            if hasattr(self.canvas, "toggle_mirror_h"): self.canvas.toggle_mirror_h()
-            cmd_matched = "MIRROR"
-        elif "save" in t:
-            # To trigger export, we can't easily call the async route from here.
-            # Instead, we'll set a flag or let the frontend know to trigger it.
-            # Easiest way: emit a special event for frontend to call export API.
-            self._emit("trigger_export", {"format": "png"})
-            cmd_matched = "SAVE"
-        elif "layer" in t:
-            if hasattr(self.canvas, "next_layer"): self.canvas.next_layer()
-            cmd_matched = "LAYER NEXT"
-
-        if cmd_matched:
-            self._emit("voice_command", {
-                "command": cmd_matched,
-                "raw_text": text,
+        if matched_cmd and self.event_callback:
+            self.event_callback("voice_command", {
+                "command": matched_cmd,
+                "text": text,
                 "timestamp": time.time()
             })
-            logger.debug(f"Voice Command Executed: {cmd_matched} (Raw: {text})")
+
+    def _apply_command(self, cmd: str):
+        """Directly interacts with the DrawingEngine."""
+        if cmd == "CLEAR": self.canvas.clear()
+        elif cmd == "UNDO": self.canvas.undo()
+        elif cmd == "REDO": self.canvas.redo()
+        elif cmd == "NEON": self.canvas.active_brush = "NEON"
+        elif cmd == "LASER": self.canvas.active_brush = "LASER"
+        elif cmd == "CHALK": self.canvas.active_brush = "CHALK"
+        elif cmd == "GHOST": self.canvas.active_brush = "GHOST"
+        elif cmd == "AIRBRUSH": self.canvas.active_brush = "AIRBRUSH"
+        elif cmd == "PENCIL": self.canvas.active_brush = "BASIC"
+        elif cmd == "MIRROR": self.canvas.toggle_mirror()
 
     def _listen_loop(self):
+        """Background listener thread."""
         try:
             self.microphone = sr.Microphone()
             with self.microphone as source:
-                self.recognizer.adjust_for_ambient_noise(source)
+                self.recognizer.adjust_for_ambient_noise(source, duration=1.0)
         except Exception as e:
-            logger.error(f"Could not initialize microphone: {e}")
-            self.active = False
+            logger.error(f"VOICE_KERNEL: MIC_INIT_FAILED [{e}]")
             return
 
-        while self.active:
+        while not self._stop_event.is_set():
             try:
                 with self.microphone as source:
+                    # Short timeout to keep the loop responsive to stop_event
                     audio = self.recognizer.listen(source, timeout=1.0, phrase_time_limit=3.0)
-
+                
                 text = self.recognizer.recognize_google(audio)
-                self._execute_command(text)
-
-            except sr.WaitTimeoutError:
-                # Normal timeout, just loop again
-                pass
-            except sr.UnknownValueError:
-                # Recognized speech but didn't understand words
-                self._emit("voice_error", {"error": "Could not understand audio"})
+                logger.info(f"VOICE_KERNEL: RECOGNIZED [{text}]")
+                self._execute(text)
+                
+            except (sr.WaitTimeoutError, sr.UnknownValueError):
+                continue
             except Exception as e:
-                logger.error(f"Voice recognition error: {e}")
-                self._emit("voice_error", {"error": str(e)})
-                time.sleep(1) # Prevent tight spin on hardware errors
+                logger.error(f"VOICE_KERNEL: RECOG_ERROR [{e}]")
+                time.sleep(1)
