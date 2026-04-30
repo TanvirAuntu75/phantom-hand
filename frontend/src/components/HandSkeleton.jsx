@@ -1,10 +1,5 @@
 import React from 'react';
 
-/**
- * PHANTOM BIOMETRIC SKELETON
- * Renders a high-fidelity digital wireframe over tracked hands.
- * Designed to look like a real-time AI blueprint.
- */
 const CONNECTIONS = [
   [0, 1], [1, 2], [2, 3], [3, 4],
   [0, 5], [5, 6], [6, 7], [7, 8],
@@ -14,7 +9,6 @@ const CONNECTIONS = [
   [0, 17]
 ];
 
-// Normalize landmark: handles both [x,y,z] arrays and {x,y,z} objects
 const getLM = (lm) => Array.isArray(lm) ? { x: lm[0], y: lm[1], z: lm[2] || 0 } : (lm || { x: 0, y: 0, z: 0 });
 
 const HandSkeleton = ({ hands, width, height }) => {
@@ -28,8 +22,15 @@ const HandSkeleton = ({ hands, width, height }) => {
       viewBox={`0 0 ${width} ${height}`}
     >
       <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+        <filter id="skel-glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="ghost-glow-skel">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
           <feMerge>
             <feMergeNode in="coloredBlur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -41,13 +42,13 @@ const HandSkeleton = ({ hands, width, height }) => {
         const { landmarks, id, is_ghost } = hand;
         if (!landmarks || landmarks.length !== 21) return null;
 
-        // Visual properties
-        const color = is_ghost ? 'var(--color-phantom-alert)' : 'var(--color-phantom-cyan)';
-        const opacity = is_ghost ? 0.3 : 0.8;
+        const color = is_ghost ? '#FF3D00' : '#00E5FF';
+        const opacity = is_ghost ? 0.4 : 0.9;
+        const filterStr = is_ghost ? "url(#ghost-glow-skel)" : "url(#skel-glow)";
 
         return (
-          <g key={id} opacity={opacity} filter="url(#glow)">
-            {/* ── BONE_STRUCTURE ─────────────────────────────────────────── */}
+          <g key={id} opacity={opacity} filter={filterStr}>
+            {/* Bone Structure */}
             {CONNECTIONS.map(([startIdx, endIdx], i) => {
               const start = getLM(landmarks[startIdx]);
               const end = getLM(landmarks[endIdx]);
@@ -59,38 +60,31 @@ const HandSkeleton = ({ hands, width, height }) => {
                   x2={end.x * width}
                   y2={end.y * height}
                   stroke={color}
-                  strokeWidth="1"
-                  strokeDasharray={is_ghost ? '2,2' : 'none'}
+                  strokeWidth="1.5"
+                  strokeDasharray={is_ghost ? '4,4' : 'none'}
                   className="transition-all duration-300"
                 />
               );
             })}
 
-            {/* ── JOINT_NODES ────────────────────────────────────────────── */}
+            {/* Joint Nodes */}
             {landmarks.map((lm, i) => {
               const p = getLM(lm);
+              const isTip = i % 4 === 0 && i !== 0;
               return (
-                <circle
+                <rect
                   key={`joint-${id}-${i}`}
-                  cx={p.x * width}
-                  cy={p.y * height}
-                  r={i % 4 === 0 ? '2.5' : '1.5'}
-                  fill={i === 8 ? 'white' : color}
+                  x={(p.x * width) - (isTip ? 3 : 2)}
+                  y={(p.y * height) - (isTip ? 3 : 2)}
+                  width={isTip ? 6 : 4}
+                  height={isTip ? 6 : 4}
+                  fill={i === 8 ? 'white' : 'transparent'}
+                  stroke={color}
+                  strokeWidth="1"
                   className={i === 8 ? 'animate-pulse' : ''}
                 />
               );
             })}
-
-            {/* ── INDEX_TARGETING_RING ───────────────────────────────────── */}
-            {landmarks[8] && (() => {
-              const tip = getLM(landmarks[8]);
-              return (
-                <g transform={`translate(${tip.x * width}, ${tip.y * height})`}>
-                  <circle r="12" fill="none" stroke={color} strokeWidth="0.5" strokeDasharray="4,2" />
-                  <circle r="8" fill="none" stroke={color} strokeWidth="1.5" className="animate-pulse" />
-                </g>
-              );
-            })()}
           </g>
         );
       })}

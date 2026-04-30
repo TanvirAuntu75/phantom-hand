@@ -1,25 +1,16 @@
 import React from 'react';
 
-/**
- * PHANTOM CHROMA CORE
- * Visualizes the current drawing color and spectrum index.
- * Designed to look like a fusion reactor cell.
- */
 const ColorOrb = ({ color, index, total }) => {
-  // Calculate stroke-dasharray for the circular progress ring
-  const radius = 18;
+  const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const progress = (index / total) * circumference;
 
-  // Handle color formatting (Backend sends BGR tuples as arrays like [0, 229, 255])
   let cssColor = color;
   let colorLabel = "UNKNOWN";
   
   if (Array.isArray(color)) {
-    // Convert BGR array [B, G, R] to rgb(R, G, B) string
     const [b, g, r] = color;
     cssColor = `rgb(${r}, ${g}, ${b})`;
-    // Convert to hex for the label
     const toHex = (c) => {
       const hex = Math.round(c).toString(16);
       return hex.length === 1 ? "0" + hex : hex;
@@ -31,52 +22,52 @@ const ColorOrb = ({ color, index, total }) => {
   }
 
   return (
-    <div className="flex items-center space-x-4 pointer-events-auto">
-      {/* ── SPECTRAL_DATA ──────────────────────────────────────────────── */}
+    <div className="flex items-center space-x-6 pointer-events-auto">
       <div className="text-right flex flex-col justify-center">
-        <span className="text-[8px] text-phantom-accent tracking-[0.2em] font-bold">SPECTRUM_ID</span>
-        <span className="text-[10px] text-white font-mono">{colorLabel}</span>
+        <span className="text-[10px] text-phantom-cyan/70 tracking-[0.3em] font-mono mb-1">CHROMA_SYNC</span>
+        <span className="text-sm text-white font-mono drop-shadow-[0_0_5px_currentColor]" style={{ color: cssColor }}>{colorLabel}</span>
       </div>
 
-      {/* ── REACTOR_CORE ───────────────────────────────────────────────── */}
-      <div className="relative w-12 h-12 flex items-center justify-center">
-        {/* Background Ring */}
+      <div className="relative w-16 h-16 flex items-center justify-center">
+        {/* Background Tracker */}
         <svg className="absolute inset-0 w-full h-full -rotate-90">
           <circle
-            cx="24"
-            cy="24"
+            cx="32"
+            cy="32"
             r={radius}
             fill="none"
-            stroke="var(--color-phantom-accent)"
-            strokeWidth="2"
-            strokeDasharray="2, 2"
+            stroke="rgba(0, 229, 255, 0.2)"
+            strokeWidth="3"
+            strokeDasharray="4, 4"
           />
-          {/* Progress Ring */}
+          {/* Active Level */}
           <circle
-            cx="24"
-            cy="24"
+            cx="32"
+            cy="32"
             r={radius}
             fill="none"
             stroke={cssColor}
-            strokeWidth="2"
+            strokeWidth="3"
             strokeDasharray={`${progress} ${circumference}`}
             className="transition-all duration-500 ease-out"
-            style={{ filter: `drop-shadow(0 0 5px ${cssColor})` }}
+            style={{ filter: `drop-shadow(0 0 8px ${cssColor})` }}
           />
         </svg>
 
-        {/* Central Core */}
+        {/* Energy Core */}
         <div 
-          className="w-6 h-6 rounded-sm transition-all duration-300 transform rotate-45 border border-white border-opacity-50"
+          className="w-8 h-8 rounded-sm transition-all duration-300 transform rotate-45 border border-white/50 animate-pulse"
           style={{ 
             backgroundColor: cssColor,
-            boxShadow: `0 0 15px ${cssColor}`,
+            boxShadow: `0 0 20px ${cssColor}, inset 0 0 10px rgba(255,255,255,0.5)`,
           }}
         />
         
-        {/* Index Indicator */}
-        <div className="absolute -bottom-1 -right-1 bg-phantom-bg border border-phantom-accent text-[8px] px-1 font-bold">
-          {index}/{total}
+        {/* Sequence Numbers */}
+        <div className="absolute -bottom-2 -right-2 bg-black border border-phantom-cyan px-1.5 py-0.5 shadow-[0_0_10px_rgba(0,229,255,0.2)] flex items-center space-x-1">
+          <span className="text-[10px] text-white font-mono">{index}</span>
+          <span className="text-[10px] text-phantom-cyan/50 font-mono">/</span>
+          <span className="text-[10px] text-phantom-cyan/50 font-mono">{total}</span>
         </div>
       </div>
     </div>

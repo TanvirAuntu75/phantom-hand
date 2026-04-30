@@ -10,11 +10,6 @@ import Scene3D from '../three/Scene3D';
 import ExportMenu from './ExportMenu';
 import VoiceWave from './VoiceWave';
 
-/**
- * PHANTOM HUD ORCHESTRATOR
- * The main high-fidelity interface for the Phantom Hand system.
- * Implements a tactical, multi-panel HUD with real-time telemetry.
- */
 const HUDOverlay = ({ 
   isConnected, 
   socket, 
@@ -30,20 +25,17 @@ const HUDOverlay = ({
   const [exportVisible, setExportVisible] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
 
-  // Initialize Boot Sequence
   useEffect(() => {
     const timer = setTimeout(() => setIsBooting(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Keyboard & Gesture Listeners for Export Trigger
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key.toLowerCase() === 'e') setExportVisible(true);
     };
     window.addEventListener('keydown', handleKeyDown);
     
-    // Auto-open export on specific gesture (if not in 3D mode)
     if (hands?.some(h => h.gesture === 'FOUR_CLOSE') && !systemState.mode_3d) {
       setExportVisible(true);
     }
@@ -52,76 +44,78 @@ const HUDOverlay = ({
   }, [hands, systemState.mode_3d]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative bg-phantom-bg text-phantom-cyan select-none">
-      {/* ── BACKGROUND_FX ─────────────────────────────────────────────────── */}
+    <div className="w-screen h-screen overflow-hidden relative bg-phantom-bg text-phantom-cyan select-none flex items-center justify-center">
       <div className="phantom-grid" />
       <div className="phantom-vignette" />
       <div className="phantom-scanline" />
 
-      {/* ── CORE_VIEWPORT ─────────────────────────────────────────────────── */}
-      <div className="absolute inset-0 z-0">
-        <DrawingCanvas
-          videoFrame={videoFrame}
-          handData={{ hands }} // Compatibility wrap for DrawingCanvas if needed
-          shapeCandidate={shapeCandidate}
-        />
-        {systemState.mode_3d && (
-          <Scene3D strokes={strokes3d} hands={hands || []} />
-        )}
-      </div>
-
-      {/* ── BOOT_OVERLAY ──────────────────────────────────────────────────── */}
       {isBooting && (
         <div className="absolute inset-0 z-50 bg-phantom-bg flex flex-col items-center justify-center space-y-4">
-          <div className="text-4xl glow-text animate-pulse">PHANTOM_HAND_OS</div>
-          <div className="text-xs phantom-data">INITIALIZING_VISION_KERNEL...</div>
-          <div className="w-48 h-1 bg-phantom-accent relative overflow-hidden">
-             <div className="absolute inset-0 bg-phantom-cyan animate-[scanlineMove_1s_infinite]" />
+          <div className="text-4xl glow-text animate-pulse font-mono tracking-widest text-phantom-cyan">JARVIS_SYSTEM</div>
+          <div className="text-xs font-mono text-phantom-cyan opacity-80">INITIALIZING_PROTOCOL...</div>
+          <div className="w-64 h-[1px] bg-phantom-accent relative overflow-hidden mt-4">
+             <div className="absolute inset-0 bg-phantom-cyan animate-[scanlineMove_1.5s_infinite]" />
           </div>
         </div>
       )}
 
-      {/* ── TOP_TELEMETRY_BAR ─────────────────────────────────────────────── */}
-      <header className="absolute top-0 left-0 w-full p-4 z-40 flex justify-between items-start pointer-events-none">
+      {/* Center Main Display Area */}
+      <div className="relative w-[90%] h-[85%] border border-phantom-cyan bg-black/40 backdrop-blur-sm z-10 flex flex-col">
+          {/* Main Headers */}
+          <div className="flex justify-between p-4 border-b border-phantom-cyan/30">
+            <div className="flex flex-col">
+              <span className="font-mono text-sm tracking-[0.2em] text-phantom-cyan">MAIN_VIEWPORT</span>
+              <span className="font-mono text-[10px] text-phantom-cyan/50 tracking-widest">ACTIVE_SESSION: 0x4B3A</span>
+            </div>
+             <div className="flex items-center space-x-4">
+               <span className={`text-[10px] font-mono tracking-[0.2em] ${isConnected ? 'text-phantom-cyan animate-pulse' : 'text-phantom-alert'}`}>
+                  {isConnected ? 'SYS.ONLINE' : 'SYS.OFFLINE'}
+               </span>
+             </div>
+          </div>
+
+          <div className="relative flex-grow overflow-hidden">
+            <DrawingCanvas
+              videoFrame={videoFrame}
+              handData={{ hands }}
+              shapeCandidate={shapeCandidate}
+            />
+            {systemState.mode_3d && (
+              <Scene3D strokes={strokes3d} hands={hands || []} />
+            )}
+          </div>
+      </div>
+
+      {/* Floating UI Elements */}
+      <div className="absolute top-6 left-6 z-40">
         <SystemPanel 
           isConnected={isConnected} 
           telemetry={telemetry} 
           systemState={systemState} 
         />
-        <div className="phantom-panel phantom-bracket p-3 flex flex-col items-end">
-          <div className="text-[10px] text-phantom-accent">AUTH_TOKEN</div>
-          <div className="text-sm">PH-75801-XNT</div>
-        </div>
-      </header>
+      </div>
 
-      {/* ── SIDE_COMMAND_PANELS ───────────────────────────────────────────── */}
-      <aside className="absolute left-6 top-32 bottom-32 w-64 z-30 flex flex-col space-y-6 pointer-events-none">
-        <div className="pointer-events-auto h-1/2">
-          <GestureLog log={gestureLog} />
-        </div>
-        <div className="pointer-events-auto h-1/2">
-          <VoiceWave isActive={systemState.voice_active} socket={socket} />
-        </div>
-      </aside>
+      <div className="absolute bottom-6 left-6 z-40 w-64 space-y-4">
+        <GestureLog log={gestureLog} />
+        <VoiceWave isActive={systemState.voice_active} socket={socket} />
+      </div>
 
-      <aside className="absolute right-6 top-32 bottom-32 w-72 z-30 flex flex-col pointer-events-none">
-        <div className="pointer-events-auto">
-          <HandStatePanel hands={hands || []} />
-        </div>
-      </aside>
+      <div className="absolute top-6 right-6 z-40 w-72">
+        <HandStatePanel hands={hands || []} />
+      </div>
 
-      {/* ── FOOTER_CONTROLS ───────────────────────────────────────────────── */}
-      <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-8 px-8 py-4 phantom-panel phantom-bracket">
+      {/* Footer Controls */}
+      <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-10 px-8 py-3 bg-black/50 border border-phantom-cyan backdrop-blur-md">
         <BrushModeBar activeMode={systemState.brushMode} mode3d={systemState.mode_3d} />
-        <div className="h-8 w-px bg-phantom-accent" />
+        <div className="h-10 w-px bg-phantom-cyan/30" />
         <ColorOrb
           color={systemState.color}
           index={systemState.colorIndex}
           total={systemState.totalColors}
         />
-      </footer >
+      </footer>
 
-      {/* ── FEEDBACK_OVERLAYS ─────────────────────────────────────────────── */}
+      {/* Extras */}
       <SnapFeedback snappedShape={snappedShape} />
       <ExportMenu visible={exportVisible} onClose={() => setExportVisible(false)} />
     </div>

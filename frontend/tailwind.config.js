@@ -7,11 +7,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Legacy tokens (kept for backward compat)
         bg: "#050A14",
         primary: "#00E5FF",
         secondary: "#FFD700",
-        // PHANTOM Design System tokens
         phantom: {
           bg:     "#050A14",
           cyan:   "#00E5FF",

@@ -1,21 +1,17 @@
 import React from 'react';
 
-/**
- * PHANTOM BRUSH SELECTOR
- * Tactical segmented control for switching drawing modes and 3D states.
- */
 const BrushModeBar = ({ activeMode, mode3d }) => {
   const modes = [
     { id: 'PNC', label: 'PNC', desc: 'PENCIL' },
-    { id: 'NEO', label: 'NEO', desc: 'NEON_GLOW' },
-    { id: 'LSR', label: 'LSR', desc: 'LASER_BEAM' },
-    { id: 'AIR', label: 'AIR', desc: 'MIST_SPRAY' },
-    { id: 'CHK', label: 'CHK', desc: 'CHALK_DUST' },
-    { id: '3D',  label: '3D',  desc: 'Z_SPATIAL'  }
+    { id: 'NEO', label: 'NEO', desc: 'NEON' },
+    { id: 'LSR', label: 'LSR', desc: 'LASER' },
+    { id: 'AIR', label: 'AIR', desc: 'SPRAY' },
+    { id: 'CHK', label: 'CHK', desc: 'CHALK' },
+    { id: '3D',  label: '3D',  desc: 'Z_AXIS'  }
   ];
 
   return (
-    <div className="flex items-center space-x-1">
+    <div className="flex items-center space-x-2">
       {modes.map((m) => {
         const isActive = (m.id === '3D' && mode3d) || (!mode3d && activeMode === m.id);
         
@@ -23,32 +19,38 @@ const BrushModeBar = ({ activeMode, mode3d }) => {
           <div
             key={m.id}
             className={`
-              group relative flex flex-col items-center justify-center w-14 h-10 
+              group relative flex flex-col items-center justify-center w-16 h-12
               border transition-all duration-300 cursor-pointer overflow-hidden
               ${isActive 
-                ? 'bg-phantom-cyan bg-opacity-20 border-phantom-cyan' 
-                : 'bg-phantom-bg border-phantom-accent hover:border-phantom-cyan hover:bg-phantom-accent hover:bg-opacity-20'
+                ? 'bg-phantom-cyan/20 border-phantom-cyan shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+                : 'bg-black/40 border-phantom-cyan/30 hover:border-phantom-cyan/70 hover:bg-phantom-cyan/10'
               }
             `}
           >
-            {/* ── SELECTION_INDICATOR ──────────────────────────────────────── */}
+            {/* Active Top Bar */}
             {isActive && (
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-phantom-cyan glow-border shadow-[0_0_10px_#00E5FF]" />
+              <div className="absolute top-0 left-0 w-full h-[3px] bg-phantom-cyan shadow-[0_0_10px_#00E5FF]" />
             )}
 
-            {/* ── MODE_LABEL ─────────────────────────────────────────────── */}
-            <span className={`text-[10px] font-bold tracking-tighter ${isActive ? 'text-phantom-cyan' : 'text-phantom-accent group-hover:text-phantom-cyan'}`}>
+            {/* Label */}
+            <span className={`text-xs font-mono tracking-widest transition-colors ${isActive ? 'text-white drop-shadow-[0_0_5px_white]' : 'text-phantom-cyan/70 group-hover:text-phantom-cyan'}`}>
               {m.label}
             </span>
 
-            {/* ── TOOLTIP_DESCRIPTIVE ─────────────────────────────────────── */}
+            {/* Tooltip */}
             <div className={`
-              absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 
-              bg-phantom-bg border border-phantom-cyan text-[8px] whitespace-nowrap
-              transition-opacity duration-300 pointer-events-none opacity-0 group-hover:opacity-100
-              phantom-bracket
+              absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1
+              bg-black/90 border border-phantom-cyan text-[10px] whitespace-nowrap font-mono tracking-widest text-phantom-cyan
+              transition-opacity duration-200 pointer-events-none opacity-0 group-hover:opacity-100 shadow-[0_0_10px_rgba(0,229,255,0.2)]
             `}>
               {m.desc}
+            </div>
+
+            {/* Decorative Dots */}
+            <div className="absolute bottom-1 w-full flex justify-center space-x-1">
+                 <div className={`w-0.5 h-0.5 ${isActive ? 'bg-phantom-cyan' : 'bg-phantom-cyan/30'}`} />
+                 <div className={`w-0.5 h-0.5 ${isActive ? 'bg-phantom-cyan' : 'bg-phantom-cyan/30'}`} />
+                 <div className={`w-0.5 h-0.5 ${isActive ? 'bg-phantom-cyan' : 'bg-phantom-cyan/30'}`} />
             </div>
           </div>
         );
