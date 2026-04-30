@@ -41,7 +41,7 @@ class GestureState:
         m_tip = np.array(landmarks[12])
         m_knuckle = np.array(landmarks[9])
         middle_ratio = np.linalg.norm(m_tip - m_knuckle) / palm_size
-        
+
         r_tip = np.array(landmarks[16])
         r_knuckle = np.array(landmarks[13])
         ring_ratio = np.linalg.norm(r_tip - r_knuckle) / palm_size

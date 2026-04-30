@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: phantom_backend
+    privileged: true
+    devices:
+      - "/dev/video0:/dev/video0"
+    volumes:
+      - ../backend:/app
+      - ../backend/exports:/app/exports
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    networks:
+      - phantom-net
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: phantom_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - phantom-net
+
+networks:
+  phantom-net:
+    driver: bridge

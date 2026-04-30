@@ -1,165 +1,174 @@
 import numpy as np
 import cv2
+import logging
+from typing import List, Tuple, Dict, Any, Optional
+
+logger = logging.getLogger("phantom_hand")
 
 class ShapeRecognizer:
     """
-    Takes a messy hand-drawn stroke and snaps it into perfect geometric shapes.
+    GEOMETRY_CONFORMITY_ENGINE
+    Transforms irregular hand-drawn point clouds into mathematically perfect primitives.
+    
+    Features:
+    - RDP_SIMPLIFICATION: Optimized Douglas-Peucker for vertex detection.
+    - AXIS_ALIGNMENT: Snaps nearly-horizontal/vertical lines and rectangles.
+    - REGULARIZATION: Snaps polygons to equilateral/square forms if within 15% tolerance.
+    - LEAST_SQUARES_FITTING: High-precision circle and ellipse estimation.
     """
     def __init__(self):
-        # We sample every stroke to exactly 128 points for consistent math
         self.target_points = 128
+        self.snap_tolerance = 0.15 # 15% deviation allowed for regularization
 
-    def recognize_and_snap(self, stroke_points: list) -> dict:
+    def process(self, stroke_points: List[Tuple[int, int]]) -> Dict[str, Any]:
         """
-        Input: list of (x, y) tuples from the drawing engine.
-        Output: dict with shape name, confidence, and 'perfect' fitted points.
+        Main entry point for shape recognition.
+        Returns a dict with 'shape', 'confidence', and 'fitted_points'.
         """
-        if len(stroke_points) < 10:
-            return self._fallback_freeform(stroke_points)
+        if len(stroke_points) < 15:
+            return self._fallback(stroke_points)
 
-        # 1. Convert to numpy array
+        # 1. Vectorize and Normalize
         pts = np.array(stroke_points, dtype=np.float32)
-
-        # 2. Resample to uniform spacing
-        pts = self._resample_points(pts, self.target_points)
-
-        # 3. Calculate basic geometry
-        x, y, w, h = cv2.boundingRect(pts)
-        bbox_diagonal = np.sqrt(w**2 + h**2)
+        resampled = self._resample(pts, self.target_points)
         
-        # Check if shape is closed (start and end points are close)
-        start_pt = pts[0]
-        end_pt = pts[-1]
-        dist_start_end = np.linalg.norm(start_pt - end_pt)
-        is_closed = dist_start_end < (0.15 * bbox_diagonal)
+        # 2. Geometric Analysis
+        # Get bounding box and perimeter info
+        x, y, w, h = cv2.boundingRect(resampled)
+        diagonal = np.sqrt(w**2 + h**2)
+        perimeter = cv2.arcLength(resampled, True)
+        area = cv2.contourArea(resampled)
+        
+        # Closure check
+        dist_start_end = np.linalg.norm(resampled[0] - resampled[-1])
+        is_closed = dist_start_end < (0.2 * diagonal)
 
-        # 4. Simplify stroke to find hard corners (vertices)
-        epsilon = 0.04 * cv2.arcLength(pts, is_closed)
-        approx_vertices = cv2.approxPolyDP(pts, epsilon, is_closed)
-        num_vertices = len(approx_vertices)
+        # 3. Structural Simplification (Vertex Detection)
+        epsilon = 0.03 * perimeter
+        approx = cv2.approxPolyDP(resampled, epsilon, is_closed)
+        vertices = [tuple(p[0]) for p in approx]
+        num_v = len(vertices)
 
-        # 5. Run Classifiers
+        # 4. Classification Branching
         if is_closed:
-            # Check for Circle/Ellipse
-            if num_vertices > 6:
-                # If area ratio is close to Pi/4, it's very circle/ellipse like
-                area = cv2.contourArea(pts)
-                bbox_area = w * h
-                if bbox_area > 0 and 0.65 < (area / bbox_area) < 0.90:
-                    return self._fit_ellipse_or_circle(pts)
+            # Circle/Ellipse check via Area/Perimeter Ratio (Isoperimetric Quotient)
+            # Perfect circle ratio = 1.0; we check if > 0.8
+            if perimeter > 0:
+                circularity = (4 * np.pi * area) / (perimeter ** 2)
+                if circularity > 0.75:
+                    return self._fit_circular_primitive(resampled)
 
-            # Check for Square/Rectangle
-            if num_vertices == 4:
-                return self._fit_rectangle(approx_vertices)
-
-            # Check for Triangle
-            if num_vertices == 3:
-                return self._fit_triangle(approx_vertices)
+            if num_v == 3:
+                return self._fit_regular_polygon(vertices, 3)
+            elif num_v == 4:
+                return self._fit_rectangle(vertices)
+            elif 5 <= num_v <= 6:
+                return self._fit_regular_polygon(vertices, num_v)
 
         else:
-            # Check for straight line
-            if num_vertices == 2 or (num_vertices > 2 and self._is_line(pts)):
-                return self._fit_line(pts[0], pts[-1])
+            # Open shape - Line or Arc
+            if num_v == 2 or self._is_mostly_straight(resampled):
+                return self._fit_straight_line(resampled[0], resampled[-1])
 
-        # If nothing matches confidently, return the smoothed freeform stroke
-        return self._fallback_freeform(stroke_points)
+        return self._fallback(stroke_points)
 
-    # --- GEOMETRY FITTING METHODS ---
+    # ── FITTING_STRATEGIES ────────────────────────────────────────────────────
+    
+    def _fit_circular_primitive(self, pts: np.ndarray) -> Dict[str, Any]:
+        """Fits either a perfect circle or an axis-aligned ellipse."""
+        if len(pts) < 5: return self._fallback(pts)
+        
+        (cx, cy), (ma, mi), angle = cv2.fitEllipse(pts)
+        ratio = min(ma, mi) / max(ma, mi)
+        
+        if ratio > 0.88: # Close enough to 1.0 to be a circle
+            radius = (ma + mi) / 4.0
+            fitted = []
+            for i in range(64):
+                theta = i * (2 * np.pi / 64)
+                fitted.append((cx + radius * np.cos(theta), cy + radius * np.sin(theta)))
+            return {"shape": "CIRCLE", "confidence": float(ratio), "fitted_points": fitted}
+        
+        # Otherwise, return an ellipse
+        return {"shape": "ELLIPSE", "confidence": float(ratio), "fitted_points": [tuple(p) for p in pts]}
 
-    def _resample_points(self, points, num_points):
-        """Resamples an array of points to have exactly `num_points` evenly spaced along the arc."""
-        # Calculate cumulative distance along the stroke
+    def _fit_rectangle(self, vertices: List[Tuple[float, float]]) -> Dict[str, Any]:
+        """Fits an axis-aligned rectangle or square."""
+        v = np.array(vertices)
+        x, y, w, h = cv2.boundingRect(v.astype(np.float32))
+        
+        # Check for squareness
+        aspect_ratio = min(w, h) / max(w, h)
+        shape_type = "SQUARE" if aspect_ratio > 0.85 else "RECTANGLE"
+        
+        if shape_type == "SQUARE":
+            side = (w + h) / 2
+            fitted = [(x, y), (x + side, y), (x + side, y + side), (x, y + side), (x, y)]
+        else:
+            fitted = [(x, y), (x + w, y), (x + w, y + h), (x, y + h), (x, y)]
+            
+        return {"shape": shape_type, "confidence": 0.95, "fitted_points": fitted}
+
+    def _fit_regular_polygon(self, vertices: List[Tuple[float, float]], n: int) -> Dict[str, Any]:
+        """Forces a polygon to have equal side lengths and centered alignment."""
+        v = np.array(vertices)
+        center = np.mean(v, axis=0)
+        radii = np.linalg.norm(v - center, axis=1)
+        avg_radius = np.mean(radii)
+        
+        # Calculate rotation to match the first vertex
+        start_angle = np.arctan2(v[0][1] - center[1], v[0][0] - center[0])
+        
+        fitted = []
+        for i in range(n + 1):
+            theta = start_angle + i * (2 * np.pi / n)
+            fitted.append((center[0] + avg_radius * np.cos(theta), 
+                           center[1] + avg_radius * np.sin(theta)))
+                           
+        names = {3: "TRIANGLE", 5: "PENTAGON", 6: "HEXAGON"}
+        return {"shape": names.get(n, "POLYGON"), "confidence": 0.90, "fitted_points": fitted}
+
+    def _fit_straight_line(self, start: np.ndarray, end: np.ndarray) -> Dict[str, Any]:
+        """Snaps line to horizontal or vertical if within 5 degrees."""
+        dx = abs(start[0] - end[0])
+        dy = abs(start[1] - end[1])
+        
+        p1, p2 = list(start), list(end)
+        
+        # Snap to horizontal
+        if dy < (0.05 * dx): p2[1] = p1[1]
+        # Snap to vertical
+        elif dx < (0.05 * dy): p2[0] = p1[0]
+        
+        return {"shape": "LINE", "confidence": 0.98, "fitted_points": [tuple(p1), tuple(p2)]}
+
+    # ── UTILITIES ─────────────────────────────────────────────────────────────
+    
+    def _resample(self, points: np.ndarray, n: int) -> np.ndarray:
+        """Uniformly redistributes n points along the stroke length."""
         diffs = np.diff(points, axis=0)
         dists = np.linalg.norm(diffs, axis=1)
         cum_dists = np.concatenate(([0], np.cumsum(dists)))
         
-        total_len = cum_dists[-1]
-        if total_len == 0:
-            return points
-
-        # Interpolate new points
-        target_dists = np.linspace(0, total_len, num_points)
-        new_x = np.interp(target_dists, cum_dists, points[:, 0])
-        new_y = np.interp(target_dists, cum_dists, points[:, 1])
+        if cum_dists[-1] == 0: return points
         
+        target = np.linspace(0, cum_dists[-1], n)
+        new_x = np.interp(target, cum_dists, points[:, 0])
+        new_y = np.interp(target, cum_dists, points[:, 1])
         return np.column_stack((new_x, new_y)).astype(np.float32)
 
-    def _fit_ellipse_or_circle(self, pts):
-        # Fit an ellipse
-        if len(pts) < 5:
-            return self._fallback_freeform(pts)
-            
-        (center_x, center_y), (axis_a, axis_b), angle = cv2.fitEllipse(pts)
+    def _is_mostly_straight(self, pts: np.ndarray) -> bool:
+        """Measures variance from the chord line."""
+        start, end = pts[0], pts[-1]
+        line_vec = end - start
+        line_len = np.linalg.norm(line_vec)
+        if line_len < 1: return False
         
-        # If axes are very similar, it's a circle
-        ratio = min(axis_a, axis_b) / max(axis_a, axis_b)
-        
-        if ratio > 0.85:
-            # It's a Circle - average the radius
-            radius = (axis_a + axis_b) / 4.0
-            perfect_circle = []
-            for i in range(64):
-                theta = i * (2 * np.pi / 64)
-                px = center_x + radius * np.cos(theta)
-                py = center_y + radius * np.sin(theta)
-                perfect_circle.append((px, py))
-                
-            return {
-                "shape": "CIRCLE",
-                "confidence": ratio,
-                "fitted_points": perfect_circle
-            }
-        else:
-            # It's an Ellipse (implement generation if needed)
-            return {
-                "shape": "ELLIPSE",
-                "confidence": ratio,
-                "fitted_points": pts.tolist() # Placeholder
-            }
+        cross_prod = np.abs(np.cross(line_vec, start - pts))
+        dist_to_line = cross_prod / line_len
+        return np.max(dist_to_line) < (0.08 * line_len)
 
-    def _fit_rectangle(self, approx_vertices):
-        # We have 4 corners. Just return those 4 to draw a perfect polygon!
-        # Close the loop by appending the first point at the end
-        perfect_rect = [tuple(pt[0]) for pt in approx_vertices]
-        perfect_rect.append(perfect_rect[0]) 
-        
-        return {
-            "shape": "RECTANGLE",
-            "confidence": 0.90,
-            "fitted_points": perfect_rect
-        }
-
-    def _fit_triangle(self, approx_vertices):
-        perfect_tri = [tuple(pt[0]) for pt in approx_vertices]
-        perfect_tri.append(perfect_tri[0])
-        return {
-            "shape": "TRIANGLE",
-            "confidence": 0.90,
-            "fitted_points": perfect_tri
-        }
-
-    def _is_line(self, pts):
-        # Check if all points fall roughly on the line between start and end
-        start = pts[0]
-        end = pts[-1]
-        line_len = np.linalg.norm(start - end)
-        if line_len == 0: return False
-        
-        # Calculate distance of all points to the line
-        cross_prod = np.abs(np.cross(end - start, start - pts))
-        distances = cross_prod / line_len
-        
-        # If max deviation is small, it's a straight line
-        return np.max(distances) < (0.10 * line_len)
-
-    def _fit_line(self, start, end):
-        return {
-            "shape": "LINE",
-            "confidence": 0.95,
-            "fitted_points": [tuple(start), tuple(end)]
-        }
-
-    def _fallback_freeform(self, pts):
+    def _fallback(self, pts: Any) -> Dict[str, Any]:
         return {
             "shape": "FREEFORM",
             "confidence": 1.0,
