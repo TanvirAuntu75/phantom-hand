@@ -113,7 +113,10 @@ class UltimateHandTracker:
             Dict mapping "Left"/"Right" to (smoothed_landmarks, is_ghost_flag).
         """
         h, w = frame.shape[:2]
-        timestamp = int(time.time() * 1000)
+        timestamp = int(time.perf_counter() * 1000)
+        if hasattr(self, '_last_timestamp') and timestamp <= self._last_timestamp:
+            timestamp = self._last_timestamp + 1
+        self._last_timestamp = timestamp
         
         # 1. Dispatch to Neural Engine
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

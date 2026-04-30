@@ -42,7 +42,7 @@ class CameraStream:
     """Dedicated capture thread ensuring zero-buffer fresh frames."""
     def __init__(self):
         # Use MSMF (Media Foundation) for modern Windows compatibility
-        self.stream = cv2.VideoCapture(settings.CAMERA_INDEX, cv2.CAP_MSMF)
+        self.stream = cv2.VideoCapture(settings.CAMERA_INDEX, cv2.CAP_ANY)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH,  settings.CAMERA_WIDTH)
         self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, settings.CAMERA_HEIGHT)
         self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -67,7 +67,7 @@ class CameraStream:
                 if self.error_count > 100:
                     logger.error("CAMERA_FAIL: Restarting stream...")
                     self.stream.release()
-                    self.stream = cv2.VideoCapture(settings.CAMERA_INDEX, cv2.CAP_MSMF)
+                    self.stream = cv2.VideoCapture(settings.CAMERA_INDEX, cv2.CAP_ANY)
                     self.error_count = 0
                 time.sleep(0.01)
 
