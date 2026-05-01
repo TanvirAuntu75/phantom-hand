@@ -6,7 +6,7 @@ const ExportMenu = ({ visible, onClose }) => {
 
   useEffect(() => {
     if (!visible) return;
-    const timer = setTimeout(() => onClose(), 5000);
+    const timer = setTimeout(() => onClose(), 6000);
     return () => clearTimeout(timer);
   }, [visible, exporting, successMsg, onClose]);
 
@@ -19,7 +19,7 @@ const ExportMenu = ({ visible, onClose }) => {
       const data = await response.json();
 
       if (data.status === 'success') {
-        setSuccessMsg(`FILE_SAVED: ${data.filename}`);
+        setSuccessMsg(`Exported ${format.toUpperCase()}`);
         const link = document.createElement('a');
         link.href = `/api/export/${data.filename}`;
         link.download = data.filename;
@@ -28,54 +28,47 @@ const ExportMenu = ({ visible, onClose }) => {
         document.body.removeChild(link);
       }
     } catch (error) {
-      setSuccessMsg("SYS_ERR: SAVE_FAILED");
+      setSuccessMsg("Export failed");
     } finally {
       setExporting(false);
       setTimeout(() => {
         setSuccessMsg("");
         onClose();
-      }, 2500);
+      }, 3000);
     }
   };
 
   if (!visible) return null;
 
   return (
-    <div className="absolute top-1/2 right-24 -translate-y-1/2 z-50 pointer-events-auto">
-      <div className="bg-black/80 border border-phantom-cyan p-5 backdrop-blur-md w-56 shadow-[0_0_20px_rgba(0,229,255,0.2)] relative">
-        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-phantom-cyan"></div>
-        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-phantom-cyan"></div>
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-phantom-cyan"></div>
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-phantom-cyan"></div>
+    <div className="absolute bottom-24 right-1/2 translate-x-[150%] z-50 pointer-events-auto animate-fade-in-up">
+      <div className="studio-panel p-4 flex flex-col space-y-2 w-40">
 
-        <div className="text-phantom-cyan text-xs font-mono tracking-[0.3em] mb-4 border-b border-phantom-cyan/30 pb-2">
-          DATA_EXPORT_PROTOCOL
+        <div className="text-xs text-studio-muted font-medium mb-1 px-2 uppercase tracking-widest text-center">
+          Export As
         </div>
 
         {exporting ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="text-white text-xs font-mono tracking-widest mb-4 animate-pulse">
-              ENCODING_DATA...
-            </div>
-            <div className="w-8 h-8 border border-phantom-cyan/30 border-t-phantom-cyan rounded-full animate-spin shadow-[0_0_10px_rgba(0,229,255,0.5)]"></div>
+          <div className="flex flex-col items-center justify-center py-6">
+            <div className="w-5 h-5 border-2 border-studio-border border-t-white rounded-full animate-spin"></div>
           </div>
         ) : successMsg ? (
-          <div className="py-8 text-center text-white text-xs font-mono font-bold tracking-widest drop-shadow-[0_0_5px_white]">
+          <div className="py-6 text-center text-sm font-medium text-white">
             {successMsg}
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {['png', 'svg', 'gif', 'mp4'].map((fmt) => (
-              <button
-                key={fmt}
-                onClick={() => handleExport(fmt)}
-                className="w-full py-2 bg-phantom-cyan/5 border border-phantom-cyan/50 text-phantom-cyan text-xs font-mono tracking-[0.2em] uppercase hover:bg-phantom-cyan hover:text-black transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,229,255,0.4)] text-left px-4 group flex justify-between items-center"
-              >
-                <span>{fmt}</span>
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity">&gt;</span>
-              </button>
-            ))}
-          </div>
+          ['png', 'svg', 'gif', 'mp4'].map((fmt) => (
+            <button
+              key={fmt}
+              onClick={() => handleExport(fmt)}
+              className="w-full py-2 px-3 rounded-xl text-sm font-medium text-gray-200 bg-white/5 hover:bg-white/10 hover:text-white transition-colors flex justify-between items-center"
+            >
+              <span className="uppercase">{fmt}</span>
+              <svg className="w-4 h-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+          ))
         )}
       </div>
     </div>

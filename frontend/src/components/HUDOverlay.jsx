@@ -26,7 +26,7 @@ const HUDOverlay = ({
   const [isBooting, setIsBooting] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsBooting(false), 2000);
+    const timer = setTimeout(() => setIsBooting(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -44,78 +44,77 @@ const HUDOverlay = ({
   }, [hands, systemState.mode_3d]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative bg-phantom-bg text-phantom-cyan select-none flex items-center justify-center">
-      <div className="phantom-grid" />
-      <div className="phantom-vignette" />
-      <div className="phantom-scanline" />
+    <div className="w-screen h-screen overflow-hidden relative bg-studio-bg text-gray-100 select-none font-sans">
 
+      {/* Boot Screen */}
       {isBooting && (
-        <div className="absolute inset-0 z-50 bg-phantom-bg flex flex-col items-center justify-center space-y-4">
-          <div className="text-4xl glow-text animate-pulse font-mono tracking-widest text-phantom-cyan">JARVIS_SYSTEM</div>
-          <div className="text-xs font-mono text-phantom-cyan opacity-80">INITIALIZING_PROTOCOL...</div>
-          <div className="w-64 h-[1px] bg-phantom-accent relative overflow-hidden mt-4">
-             <div className="absolute inset-0 bg-phantom-cyan animate-[scanlineMove_1.5s_infinite]" />
-          </div>
+        <div className="absolute inset-0 z-50 bg-studio-bg flex flex-col items-center justify-center transition-opacity duration-1000">
+          <div className="w-16 h-16 rounded-full border-4 border-studio-border border-t-studio-accent animate-spin mb-8"></div>
+          <div className="text-2xl font-light text-white tracking-widest">PHANTOM STUDIO</div>
         </div>
       )}
 
-      {/* Center Main Display Area */}
-      <div className="relative w-[90%] h-[85%] border border-phantom-cyan bg-black/40 backdrop-blur-sm z-10 flex flex-col">
-          {/* Main Headers */}
-          <div className="flex justify-between p-4 border-b border-phantom-cyan/30">
-            <div className="flex flex-col">
-              <span className="font-mono text-sm tracking-[0.2em] text-phantom-cyan">MAIN_VIEWPORT</span>
-              <span className="font-mono text-[10px] text-phantom-cyan/50 tracking-widest">ACTIVE_SESSION: 0x4B3A</span>
-            </div>
-             <div className="flex items-center space-x-4">
-               <span className={`text-[10px] font-mono tracking-[0.2em] ${isConnected ? 'text-phantom-cyan animate-pulse' : 'text-phantom-alert'}`}>
-                  {isConnected ? 'SYS.ONLINE' : 'SYS.OFFLINE'}
-               </span>
-             </div>
-          </div>
+      {/* Main Canvas Area */}
+      <div className="absolute inset-0 z-0">
+        <DrawingCanvas
+          videoFrame={videoFrame}
+          handData={{ hands }}
+          shapeCandidate={shapeCandidate}
+        />
+        {systemState.mode_3d && (
+          <Scene3D strokes={strokes3d} hands={hands || []} />
+        )}
+        <div className="canvas-vignette" />
+      </div>
 
-          <div className="relative flex-grow overflow-hidden">
-            <DrawingCanvas
-              videoFrame={videoFrame}
-              handData={{ hands }}
-              shapeCandidate={shapeCandidate}
+      {/* Floating UI Layer */}
+      <div className="absolute inset-0 z-40 pointer-events-none p-8 flex flex-col justify-between">
+
+        {/* Top Header Row */}
+        <div className="flex justify-between items-start w-full">
+            <SystemPanel
+              isConnected={isConnected}
+              telemetry={telemetry}
             />
-            {systemState.mode_3d && (
-              <Scene3D strokes={strokes3d} hands={hands || []} />
-            )}
+
+            <div className="flex space-x-4">
+              <VoiceWave isActive={systemState.voice_active} socket={socket} />
+              <HandStatePanel hands={hands || []} />
+            </div>
+        </div>
+
+        {/* Floating Side Toasts */}
+        <div className="absolute left-8 bottom-32 w-72">
+           <GestureLog log={gestureLog} />
+        </div>
+
+        {/* Centered Bottom Dock */}
+        <div className="w-full flex justify-center pb-4">
+          <div className="studio-pill px-8 py-3 flex items-center space-x-12 pointer-events-auto animate-fade-in-up">
+            <BrushModeBar activeMode={systemState.brushMode} mode3d={systemState.mode_3d} />
+            <div className="w-px h-10 bg-studio-border" />
+            <ColorOrb
+              color={systemState.color}
+              index={systemState.colorIndex}
+              total={systemState.totalColors}
+            />
+            <div className="w-px h-10 bg-studio-border" />
+            <button
+              onClick={() => setExportVisible(true)}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-studio-muted hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </button>
           </div>
+        </div>
+
       </div>
 
-      {/* Floating UI Elements */}
-      <div className="absolute top-6 left-6 z-40">
-        <SystemPanel 
-          isConnected={isConnected} 
-          telemetry={telemetry} 
-          systemState={systemState} 
-        />
-      </div>
-
-      <div className="absolute bottom-6 left-6 z-40 w-64 space-y-4">
-        <GestureLog log={gestureLog} />
-        <VoiceWave isActive={systemState.voice_active} socket={socket} />
-      </div>
-
-      <div className="absolute top-6 right-6 z-40 w-72">
-        <HandStatePanel hands={hands || []} />
-      </div>
-
-      {/* Footer Controls */}
-      <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-10 px-8 py-3 bg-black/50 border border-phantom-cyan backdrop-blur-md">
-        <BrushModeBar activeMode={systemState.brushMode} mode3d={systemState.mode_3d} />
-        <div className="h-10 w-px bg-phantom-cyan/30" />
-        <ColorOrb
-          color={systemState.color}
-          index={systemState.colorIndex}
-          total={systemState.totalColors}
-        />
-      </footer>
-
-      {/* Extras */}
+      {/* Overlays */}
       <SnapFeedback snappedShape={snappedShape} />
       <ExportMenu visible={exportVisible} onClose={() => setExportVisible(false)} />
     </div>

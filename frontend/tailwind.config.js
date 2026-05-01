@@ -7,29 +7,37 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#050A14",
-        primary: "#00E5FF",
-        secondary: "#FFD700",
-        phantom: {
-          bg:     "#050A14",
-          cyan:   "#00E5FF",
-          accent: "#0D2137",
-          alert:  "#FF3D00",
+        studio: {
+          bg: "#0F1115",
+          glass: "rgba(30, 35, 45, 0.65)",
+          glassLight: "rgba(255, 255, 255, 0.08)",
+          accent: "#FF715B", // Soft Coral
+          secondary: "#4ADE80", // Mint
+          muted: "#9CA3AF",
+          border: "rgba(255, 255, 255, 0.1)",
         },
       },
       fontFamily: {
-        mono: ['"Share Tech Mono"', 'monospace'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
-      borderRadius: {
-        none: '0px',
-        sm: '0px',
-        DEFAULT: '0px',
-        md: '0px',
-        lg: '0px',
-        xl: '0px',
-        '2xl': '0px',
-        '3xl': '0px',
-        full: '0px',
+      boxShadow: {
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        'glow': '0 0 20px rgba(255, 113, 91, 0.4)',
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
       }
     },
   },

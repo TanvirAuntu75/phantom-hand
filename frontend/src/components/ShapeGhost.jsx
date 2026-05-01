@@ -18,22 +18,21 @@ const ShapeGhost = ({ shapeCandidate, width, height }) => {
       viewBox={`0 0 ${width} ${height}`}
     >
       <defs>
-        <filter id="ghost-glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+        <filter id="ghost-blur" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="8" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
+
+      {/* Soft Fill */}
       <polygon
         points={points}
-        fill="rgba(0, 229, 255, 0.15)"
-        stroke="#00E5FF"
+        fill="rgba(255, 255, 255, 0.05)"
+        stroke="rgba(255, 255, 255, 0.6)"
         strokeWidth="2"
-        strokeDasharray="6 4"
-        filter="url(#ghost-glow)"
-        className="animate-[pulse_1.5s_ease-in-out_infinite]"
+        strokeLinejoin="round"
+        filter="url(#ghost-blur)"
+        className="animate-pulse-slow"
       />
     </svg>
   );

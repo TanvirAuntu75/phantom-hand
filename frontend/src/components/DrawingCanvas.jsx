@@ -34,17 +34,16 @@ const DrawingCanvas = ({ videoFrame, handData, shapeCandidate }) => {
 
   return (
     <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
-      <div className="relative w-full h-full overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden bg-[#0F1115]">
         
-        {/* ── BASE_VIDEO_FEED ───────────────────────────────────────────── */}
+        {/* Base Feed - Softly styled to look like a canvas, not a security camera */}
         <canvas
           ref={canvasRef}
           width={1280}
           height={720}
-          className="w-full h-full object-cover filter brightness-100 contrast-125 saturate-50 sepia-[.2] hue-rotate-[180deg]"
+          className="w-full h-full object-cover filter contrast-[1.05] saturate-[0.8] brightness-[0.9]"
         />
 
-        {/* ── TACTICAL_OVERLAYS ─────────────────────────────────────────── */}
         <div className="absolute inset-0 pointer-events-none">
           
           <HandSkeleton
@@ -53,6 +52,7 @@ const DrawingCanvas = ({ videoFrame, handData, shapeCandidate }) => {
             height={720}
           />
 
+          {/* Minimal Cursor */}
           {primaryHand && !primaryHand.is_ghost && (
             <div 
               className="absolute transition-all duration-75 ease-out"
@@ -62,17 +62,9 @@ const DrawingCanvas = ({ videoFrame, handData, shapeCandidate }) => {
                 transform: 'translate(-50%, -50%)'
               }}
             >
-              <div className="relative w-16 h-16">
-                <div className="absolute top-0 left-0 w-4 h-4 border-l-[3px] border-t-[3px] border-phantom-cyan" />
-                <div className="absolute top-0 right-0 w-4 h-4 border-r-[3px] border-t-[3px] border-phantom-cyan" />
-                <div className="absolute bottom-0 left-0 w-4 h-4 border-l-[3px] border-b-[3px] border-phantom-cyan" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-r-[3px] border-b-[3px] border-phantom-cyan" />
-                
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-phantom-cyan shadow-[0_0_8px_#00E5FF] animate-ping" />
-                
-                <div className="absolute -top-6 -right-16 bg-phantom-cyan/20 border border-phantom-cyan px-1.5 py-0.5 text-[8px] text-phantom-cyan font-mono tracking-widest whitespace-nowrap backdrop-blur-sm">
-                  TGT_LCK: {String(primaryHand.id || "NULL").slice(-4).toUpperCase()}
-                </div>
+              <div className="relative w-8 h-8 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
+                <div className="absolute inset-0 border border-white/30 rounded-full animate-ping opacity-50" />
               </div>
             </div>
           )}
@@ -83,28 +75,22 @@ const DrawingCanvas = ({ videoFrame, handData, shapeCandidate }) => {
             height={720}
           />
 
+          {/* Invisible unless actively gesturing */}
           <GestureIndicator gesture={currentGesture} />
         </div>
 
-        {/* ── SIGNAL_LOSS_OVERLAY ────────────────────────────────────────── */}
+        {/* Offline State */}
         {!videoFrame && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
-            <div className="relative w-48 h-48 mb-8 border border-phantom-cyan rounded-full flex items-center justify-center">
-                <div className="absolute inset-2 border border-phantom-cyan border-dashed rounded-full animate-[spin_10s_linear_infinite]" />
-                <div className="absolute inset-6 border border-phantom-cyan border-dotted rounded-full animate-[spin_5s_linear_infinite_reverse]" />
-                <div className="text-phantom-cyan text-sm tracking-[0.4em] font-mono animate-pulse">
-                   OFFLINE
-                </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-studio-bg backdrop-blur-xl">
+            <div className="w-20 h-20 rounded-full bg-studio-glass flex items-center justify-center mb-6 shadow-glass">
+                <svg className="w-8 h-8 text-studio-muted animate-pulse-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
             </div>
-            <div className="text-[10px] text-phantom-cyan/60 mb-4 tracking-[0.3em] font-mono uppercase">WAITING_FOR_UPLINK...</div>
-            <div className="w-64 h-[2px] bg-phantom-accent relative overflow-hidden">
-                <div className="absolute top-0 left-0 h-full bg-phantom-cyan animate-[scanlineMove_1.5s_infinite] w-full shadow-[0_0_10px_#00E5FF]" />
-            </div>
+            <div className="text-xl font-medium text-white mb-2">Camera Offline</div>
+            <div className="text-sm text-studio-muted">Waiting for vision system connection...</div>
           </div>
         )}
-
-        {/* Tactical Screen FX */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black/60 pointer-events-none" />
       </div>
     </div>
   );

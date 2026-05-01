@@ -22,19 +22,9 @@ const HandSkeleton = ({ hands, width, height }) => {
       viewBox={`0 0 ${width} ${height}`}
     >
       <defs>
-        <filter id="skel-glow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <filter id="ghost-glow-skel">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
+        <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
 
@@ -42,46 +32,38 @@ const HandSkeleton = ({ hands, width, height }) => {
         const { landmarks, id, is_ghost } = hand;
         if (!landmarks || landmarks.length !== 21) return null;
 
-        const color = is_ghost ? '#FF3D00' : '#00E5FF';
-        const opacity = is_ghost ? 0.4 : 0.9;
-        const filterStr = is_ghost ? "url(#ghost-glow-skel)" : "url(#skel-glow)";
+        const baseColor = is_ghost ? '#FF715B' : '#4ADE80';
+        const opacity = is_ghost ? 0.3 : 0.6;
 
         return (
-          <g key={id} opacity={opacity} filter={filterStr}>
-            {/* Bone Structure */}
-            {CONNECTIONS.map(([startIdx, endIdx], i) => {
-              const start = getLM(landmarks[startIdx]);
-              const end = getLM(landmarks[endIdx]);
-              return (
-                <line
-                  key={`bone-${id}-${i}`}
-                  x1={start.x * width}
-                  y1={start.y * height}
-                  x2={end.x * width}
-                  y2={end.y * height}
-                  stroke={color}
-                  strokeWidth="1.5"
-                  strokeDasharray={is_ghost ? '4,4' : 'none'}
-                  className="transition-all duration-300"
-                />
-              );
-            })}
+          <g key={id} opacity={opacity} filter="url(#soft-glow)">
+            {/* Draw bones as organic, rounded paths */}
+            <path
+              d={CONNECTIONS.map(([startIdx, endIdx]) => {
+                const start = getLM(landmarks[startIdx]);
+                const end = getLM(landmarks[endIdx]);
+                return `M ${start.x * width} ${start.y * height} L ${end.x * width} ${end.y * height}`;
+              }).join(' ')}
+              stroke={baseColor}
+              strokeWidth={is_ghost ? "2" : "3"}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+              className="transition-all duration-100 ease-out"
+            />
 
-            {/* Joint Nodes */}
+            {/* Joints as soft dots */}
             {landmarks.map((lm, i) => {
               const p = getLM(lm);
               const isTip = i % 4 === 0 && i !== 0;
               return (
-                <rect
+                <circle
                   key={`joint-${id}-${i}`}
-                  x={(p.x * width) - (isTip ? 3 : 2)}
-                  y={(p.y * height) - (isTip ? 3 : 2)}
-                  width={isTip ? 6 : 4}
-                  height={isTip ? 6 : 4}
-                  fill={i === 8 ? 'white' : 'transparent'}
-                  stroke={color}
-                  strokeWidth="1"
-                  className={i === 8 ? 'animate-pulse' : ''}
+                  cx={p.x * width}
+                  cy={p.y * height}
+                  r={isTip ? "4" : "2.5"}
+                  fill={i === 8 ? '#FFFFFF' : baseColor}
+                  className={i === 8 ? 'animate-pulse-slow' : ''}
                 />
               );
             })}
