@@ -19,19 +19,16 @@ class Exporter:
         path, filename = self._generate_filepath("png")
         if filepath: path = filepath
 
-        # Start with black background
-        output = np.zeros_like(canvas.canvas)
+        # We must use canvas.layers[0] since canvas.canvas is undefined in DrawingEngine implementation
+        height, width = canvas.height, canvas.width
+        output = np.zeros((height, width, 3), dtype=np.uint8)
 
-        # Composite canvas onto black
-        gray = cv2.cvtColor(canvas.canvas, cv2.COLOR_BGR2GRAY)
-        _, mask = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
-        mask_inv = cv2.bitwise_not(mask)
+        # Composite all permanent layers (bottom to top)
+        for layer in canvas.layers:
+            mask = layer.any(axis=2)
+            output[mask] = layer[mask]
 
-        bg = cv2.bitwise_and(output, output, mask=mask_inv)
-        fg = cv2.bitwise_and(canvas.canvas, canvas.canvas, mask=mask)
-        final = cv2.add(bg, fg)
-
-        cv2.imwrite(path, final)
+        cv2.imwrite(path, output)
         return path, filename
 
     def export_svg(self, canvas, filepath=None) -> tuple[str, str]:
@@ -68,35 +65,23 @@ class Exporter:
         if filepath: path = filepath
 
         frames = []
-        frame_canvas = np.zeros_like(canvas.canvas)
+        frame_canvas = np.zeros((canvas.height, canvas.width, 3), dtype=np.uint8)
 
-        # For a true replay, we draw each stroke progressively.
-        # To keep processing reasonable, we draw full strokes one by one.
         for stroke in getattr(canvas, "raw_strokes_2d", []):
             pts = np.array(stroke["points"], np.int32)
             cv2.polylines(frame_canvas, [pts], False, stroke["color"], stroke["width"], cv2.LINE_AA)
-
-            # Convert BGR to RGB for PIL
             rgb_frame = cv2.cvtColor(frame_canvas, cv2.COLOR_BGR2RGB)
             frames.append(Image.fromarray(rgb_frame))
 
         if not frames:
-            # If empty, just save one black frame
-            frames.append(Image.fromarray(np.zeros((canvas.height, canvas.width, 3), dtype=np.uint8)))
+            frames.append(Image.fromarray(frame_canvas))
 
-        # Hold final frame
         for _ in range(10):
             frames.append(frames[-1])
 
-        # duration in ms per frame
         duration = int(1000 / fps)
-
         frames[0].save(
-            path,
-            save_all=True,
-            append_images=frames[1:],
-            duration=duration,
-            loop=0
+            path, save_all=True, append_images=frames[1:], duration=duration, loop=0
         )
         return path, filename
 
@@ -108,14 +93,13 @@ class Exporter:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(path, fourcc, fps, (canvas.width, canvas.height))
 
-        frame_canvas = np.zeros_like(canvas.canvas)
+        frame_canvas = np.zeros((canvas.height, canvas.width, 3), dtype=np.uint8)
 
         for stroke in getattr(canvas, "raw_strokes_2d", []):
             pts = np.array(stroke["points"], np.int32)
             cv2.polylines(frame_canvas, [pts], False, stroke["color"], stroke["width"], cv2.LINE_AA)
             out.write(frame_canvas)
 
-        # Hold final frame for 1 second (30 frames)
         for _ in range(30):
             out.write(frame_canvas)
 

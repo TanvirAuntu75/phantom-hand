@@ -29,6 +29,7 @@ class DrawingEngine:
         # Active stroke buffers (Real-time tracking)
         self.current_strokes: Dict[str, List[Tuple[int, int]]] = {}
         self.current_z_depths: Dict[str, List[float]] = {}
+        self.raw_strokes_2d = []
         
         # ── HISTORY_ENGINE ────────────────────────────────────────────────────
         # Stores (layer_index, canvas_snapshot)
@@ -37,7 +38,7 @@ class DrawingEngine:
         self._MAX_HISTORY = 15
 
         # ── BRUSH_CONFIG ──────────────────────────────────────────────────────
-        self.brush_modes = ["LASER", "NEON", "GHOST", "CHALK"]
+        self.brush_modes = ["LASER", "NEON", "GHOST", "CHALK", "AIRBRUSH", "BASIC"]
         self.active_brush_idx = 0
         
         self.palette = [
@@ -80,6 +81,13 @@ class DrawingEngine:
             if hand_id not in self.current_strokes or hand_id not in self.current_z_depths:
                 self.current_strokes[hand_id] = []
                 self.current_z_depths[hand_id] = []
+
+            # Teleport guard
+            if self.current_strokes[hand_id]:
+                last_px, last_py = self.current_strokes[hand_id][-1]
+                dist = ((px - last_px)**2 + (py - last_py)**2)**0.5
+                if dist > 250: # MAX_JUMP_PX
+                    self.finish_stroke(hand_id)
                 
             self.current_strokes[hand_id].append((px, py))
             self.current_z_depths[hand_id].append(z_depth)
@@ -117,6 +125,11 @@ class DrawingEngine:
                 "color": self.current_color,
                 "width": self.thickness
             })
+        self.raw_strokes_2d.append({
+            "points": self.current_strokes[hand_id],
+            "color": self.current_color,
+            "width": self.thickness
+        })
 
         # 4. Clear buffers
         self.current_strokes[hand_id] = []
@@ -206,6 +219,39 @@ class DrawingEngine:
         # Placeholder for mirroring logic
         logger.info("MIRROR_MODE_TOGGLED (STUB)")
 
+
+
+    def set_color_by_hex(self, hex_val: str) -> None:
+        try:
+            hex_val = hex_val.lstrip('#')
+            b = int(hex_val[4:6], 16)
+            g = int(hex_val[2:4], 16)
+            r = int(hex_val[0:2], 16)
+
+            # Check if color exists in palette
+            for i, col in enumerate(self.palette):
+                if col == (b, g, r):
+                    self.color_idx = i
+                    logger.info(f"COLOR_SELECTED: {self.current_color}")
+                    return
+
+            # Add new color
+            self.palette.append((b, g, r))
+            self.color_idx = len(self.palette) - 1
+            logger.info(f"COLOR_ADDED_AND_SELECTED: {self.current_color}")
+        except Exception as e:
+            logger.error(f"COLOR_SET_ERROR: {e}")
+
+    def set_brush(self, brush_name: str) -> None:
+        if brush_name in self.brush_modes:
+            self.active_brush_idx = self.brush_modes.index(brush_name)
+            logger.info(f"BRUSH_SELECTED: {self.active_brush}")
+
+    def set_layer(self, layer_idx: int) -> None:
+        if 0 <= layer_idx < self.num_layers:
+            self.active_layer = layer_idx
+            logger.info(f"LAYER_SWITCHED: {self.active_layer}")
+
     # ── INTERNAL_UTILITIES ────────────────────────────────────────────────────
     def _push_undo(self) -> None:
         self._undo_stack.append((self.active_layer, self.layers[self.active_layer].copy()))
@@ -227,15 +273,11 @@ class DrawingEngine:
         elif brush == "NEON":
             # Glow effect: draw thick blurred lines first, then sharp core
             cv2.polylines(surface, [pts], False, color, self.thickness * 3, cv2.LINE_AA)
-            # The 'glow' typically requires a post-processing blur or multiple additive passes
-            # For direct BGR rendering, we simulate with multiple line widths
             cv2.polylines(surface, [pts], False, color, self.thickness * 2, cv2.LINE_AA)
             cv2.polylines(surface, [pts], False, (255, 255, 255), self.thickness // 2, cv2.LINE_AA)
             
         elif brush == "GHOST":
             # Semi-transparent strokes (simulated)
-            # Note: OpenCV doesn't support transparency in polylines directly on a mask
-            # We draw at full strength; the HUD handles transparency logic if needed.
             cv2.polylines(surface, [pts], False, color, self.thickness, cv2.LINE_AA)
 
         elif brush == "CHALK":
@@ -244,7 +286,31 @@ class DrawingEngine:
                 if i % 2 == 0:
                     cv2.line(surface, tuple(pts[i]), tuple(pts[i+1]), color, self.thickness, cv2.LINE_4)
 
+        elif brush == "AIRBRUSH":
+            # Spray effect by drawing small random dots
+            for i in range(len(pts) - 1):
+                p1 = pts[i]
+                cv2.circle(surface, tuple(p1), self.thickness * 2, color, -1)
+
+        elif brush == "BASIC":
+            cv2.polylines(surface, [pts], False, color, self.thickness, cv2.LINE_AA)
+
+
     def get_last_stroke(self, hand_id: str) -> Optional[List[Tuple[int, int]]]:
         """Provides data for shape recognition."""
-        # This would require an additional buffer of the last committed stroke
-        return None # Placeholder for recognition logic integration
+        if self.raw_strokes_2d:
+            return self.raw_strokes_2d[-1]["points"]
+        return None
+
+    def apply_shape(self, hand_id: str, fitted_points: List[Tuple[float, float]], shape_type: str) -> None:
+        if not fitted_points: return
+        self.undo() # Remove the messy stroke
+        pts = np.array(fitted_points, np.int32)
+        self._render_stroke_to_surface(self.layers[self.active_layer], pts, self.active_brush)
+        self.raw_strokes_2d.append({
+            "points": fitted_points,
+            "color": self.current_color,
+            "width": self.thickness,
+            "shape": shape_type
+        })
+        self._dirty = True

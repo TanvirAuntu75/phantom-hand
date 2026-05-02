@@ -20,19 +20,19 @@ def test_gesture_debouncing():
             self.mode_3d = False
         def undo(self):
             self.undo_calls += 1
-        def clear_all(self):
+        def clear(self):
             self.clear_calls += 1
 
     canvas = MockCanvas()
     router = CommandRouter(canvas, None)
 
     for _ in range(30):
-        router.route("hand1", MockGestureResult("UNDO"), [[0,0,0]]*21)
+        router.route("hand1", MockGestureResult("FIST_UNDO"), [[0,0,0]]*21)
 
     assert canvas.undo_calls == 1
 
     for _ in range(30):
-        router.route("hand1", MockGestureResult("CLEAR"), [[0,0,0]]*21)
+        router.route("hand1", MockGestureResult("OPEN_CLEAR"), [[0,0,0]]*21)
 
     assert canvas.clear_calls == 1
 
@@ -45,5 +45,5 @@ def test_pinky_toggles_voice():
     router = CommandRouter(MockCanvas(), None, voice_ctl)
 
     assert voice_ctl.active is False
-    router.route("hand1", MockGestureResult("PINKY_ONLY"), [[0,0,0]]*21)
+    router.route("hand1", MockGestureResult("PINKY_VOICE"), [[0,0,0]]*21)
     assert voice_ctl.active is True

@@ -17,6 +17,7 @@ import socketio
 
 # Ensure local imports work correctly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'core'))
 
 from backend.config import settings
 from backend.core.hand_tracker import UltimateHandTracker
@@ -135,7 +136,7 @@ async def lifespan(app: FastAPI):
 
 # ── APP_CONFIGURATION ─────────────────────────────────────────────────────────
 app = FastAPI(title="PHANTOM HAND Backend", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
 
 sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*', max_http_buffer_size=5*1024*1024)
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
@@ -285,6 +286,25 @@ async def undo_canvas():
 async def export_png():
     if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
     path, filename = await asyncio.to_thread(exporter.export_png, canvas)
+    return {"status": "success", "path": path, "filename": filename}
+
+
+@app.post("/export/svg")
+async def export_svg():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_svg, canvas)
+    return {"status": "success", "path": path, "filename": filename}
+
+@app.post("/export/gif")
+async def export_gif():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_gif, canvas)
+    return {"status": "success", "path": path, "filename": filename}
+
+@app.post("/export/mp4")
+async def export_mp4():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_mp4, canvas)
     return {"status": "success", "path": path, "filename": filename}
 
 @app.get("/export/{filename}")

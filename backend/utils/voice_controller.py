@@ -69,14 +69,14 @@ class VoiceController:
         # 2. Color Commands (Fuzzy match from config)
         for color_name, hex_val in settings.COLOR_PALETTE.items():
             if color_name.lower() in t:
-                self.canvas.set_color(hex_val)
+                self.canvas.set_color_by_hex(hex_val)
                 matched_cmd = f"COLOR_{color_name}"
         
         # 3. Layer Commands ("Layer 1", "Layer 2", etc.)
         if "layer" in t:
             for i in range(1, settings.MAX_LAYERS + 1):
                 if str(i) in t:
-                    self.canvas.switch_layer(i)
+                    self.canvas.set_layer(i-1)
                     matched_cmd = f"LAYER_{i}"
 
         if matched_cmd and self.event_callback:
@@ -91,12 +91,12 @@ class VoiceController:
         if cmd == "CLEAR": self.canvas.clear()
         elif cmd == "UNDO": self.canvas.undo()
         elif cmd == "REDO": self.canvas.redo()
-        elif cmd == "NEON": self.canvas.active_brush = "NEON"
-        elif cmd == "LASER": self.canvas.active_brush = "LASER"
-        elif cmd == "CHALK": self.canvas.active_brush = "CHALK"
-        elif cmd == "GHOST": self.canvas.active_brush = "GHOST"
-        elif cmd == "AIRBRUSH": self.canvas.active_brush = "AIRBRUSH"
-        elif cmd == "PENCIL": self.canvas.active_brush = "BASIC"
+        elif cmd == "NEON": self.canvas.set_brush("NEON")
+        elif cmd == "LASER": self.canvas.set_brush("LASER")
+        elif cmd == "CHALK": self.canvas.set_brush("CHALK")
+        elif cmd == "GHOST": self.canvas.set_brush("GHOST")
+        elif cmd == "AIRBRUSH": self.canvas.set_brush("AIRBRUSH")
+        elif cmd == "PENCIL": self.canvas.set_brush("BASIC")
         elif cmd == "MIRROR": self.canvas.toggle_mirror()
 
     def _listen_loop(self):

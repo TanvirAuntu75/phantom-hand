@@ -123,6 +123,9 @@ class CommandRouter:
                 self.canvas.next_brush()
             self._emit("config_changed", {"target": "BRUSH", "hand": hand_id})
 
+        elif gesture == "FOUR_EXPORT":
+            self._emit("action_triggered", {"type": "EXPORT"})
+
         elif gesture == "HORNS_LAYER":
             if hasattr(self.canvas, "next_layer"):
                 self.canvas.next_layer()
@@ -132,6 +135,13 @@ class CommandRouter:
             if hasattr(self.canvas, "toggle_mirror"):
                 self.canvas.toggle_mirror()
             self._emit("config_changed", {"target": "MIRROR", "hand": hand_id})
+
+        elif gesture == "PINKY_VOICE":
+            # _dispatch may be an event callback OR a VoiceController depending on how it is initialized
+            if hasattr(self._dispatch, "toggle"):
+                self._dispatch.toggle()
+            elif hasattr(self, "voice_controller") and hasattr(self.voice_controller, "toggle"):
+                self.voice_controller.toggle()
 
         elif gesture.startswith("SWIPE_"):
             self._handle_swipe(gesture, hand_id)
@@ -158,12 +168,12 @@ class CommandRouter:
         if not stroke:
             return
 
-        result = self.shape_recognizer.recognize(stroke)
-        if result and result.confidence > 0.6:
-            self.canvas.apply_shape(hand_id, result.fitted_points, result.shape_type)
+        result = self.shape_recognizer.process(stroke)
+        if result and result.get("confidence", 0.0) > 0.6:
+            self.canvas.apply_shape(hand_id, result.get("fitted_points", []), result.get("shape", "FREEFORM"))
             self._emit("shape_snapped", {
-                "shape": result.shape_type,
-                "confidence": result.confidence,
+                "shape": result.get("shape", "FREEFORM"),
+                "confidence": result.get("confidence", 0.0),
                 "hand": hand_id
             })
 
