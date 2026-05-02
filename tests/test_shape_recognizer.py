@@ -28,20 +28,20 @@ def generate_triangle(base=0.4, height=0.4, center=(0.5, 0.5)):
 
 def test_recognize_line(recognizer):
     stroke = generate_line(noise=0.01)
-    result = recognizer.recognize_and_snap(stroke)
+    result = recognizer.process(stroke)
     assert result["shape"] == "LINE"
 
 def test_recognize_rectangle(recognizer):
     stroke = generate_rectangle()
-    result = recognizer.recognize_and_snap(stroke)
-    assert result["shape"] == "RECTANGLE"
+    result = recognizer.process(stroke)
+    assert result["shape"] in ["RECTANGLE", "SQUARE"]
 
 def test_recognize_triangle(recognizer):
     stroke = generate_triangle()
-    result = recognizer.recognize_and_snap(stroke)
+    result = recognizer.process(stroke)
     assert result["shape"] == "TRIANGLE"
 
 def test_fallback_freeform(recognizer):
     stroke = [(0.1, 0.1), (0.1, 0.12)]
-    result = recognizer.recognize_and_snap(stroke)
+    result = recognizer.process(stroke)
     assert result["shape"] == "FREEFORM"

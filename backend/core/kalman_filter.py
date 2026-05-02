@@ -40,7 +40,7 @@ class LandmarkSmoother:
         self.t_prev = t_now
         
         # Safety for first frame or pause
-        if dt <= 0 or dt > 0.5: 
+        if dt <= 0.001 or dt > 0.5: # Prevent numeric instability from micro-deltas
             dt = 1.0 / 30.0 # Assume 30fps fallback
 
         x = np.array(raw_landmarks, dtype=np.float32) # (21, 3)

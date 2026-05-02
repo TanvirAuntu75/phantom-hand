@@ -133,6 +133,13 @@ class CommandRouter:
                 self.canvas.toggle_mirror()
             self._emit("config_changed", {"target": "MIRROR", "hand": hand_id})
 
+        elif gesture == "PINKY_VOICE":
+            # _dispatch may be an event callback OR a VoiceController depending on how it is initialized
+            if hasattr(self._dispatch, "toggle"):
+                self._dispatch.toggle()
+            elif hasattr(self, "voice_controller") and hasattr(self.voice_controller, "toggle"):
+                self.voice_controller.toggle()
+
         elif gesture.startswith("SWIPE_"):
             self._handle_swipe(gesture, hand_id)
 

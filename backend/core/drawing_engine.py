@@ -29,6 +29,7 @@ class DrawingEngine:
         # Active stroke buffers (Real-time tracking)
         self.current_strokes: Dict[str, List[Tuple[int, int]]] = {}
         self.current_z_depths: Dict[str, List[float]] = {}
+        self.raw_strokes_2d = []
         
         # ── HISTORY_ENGINE ────────────────────────────────────────────────────
         # Stores (layer_index, canvas_snapshot)
@@ -80,6 +81,13 @@ class DrawingEngine:
             if hand_id not in self.current_strokes or hand_id not in self.current_z_depths:
                 self.current_strokes[hand_id] = []
                 self.current_z_depths[hand_id] = []
+
+            # Teleport guard
+            if self.current_strokes[hand_id]:
+                last_px, last_py = self.current_strokes[hand_id][-1]
+                dist = ((px - last_px)**2 + (py - last_py)**2)**0.5
+                if dist > 250: # MAX_JUMP_PX
+                    self.finish_stroke(hand_id)
                 
             self.current_strokes[hand_id].append((px, py))
             self.current_z_depths[hand_id].append(z_depth)
@@ -117,6 +125,11 @@ class DrawingEngine:
                 "color": self.current_color,
                 "width": self.thickness
             })
+        self.raw_strokes_2d.append({
+            "points": self.current_strokes[hand_id],
+            "color": self.current_color,
+            "width": self.thickness
+        })
 
         # 4. Clear buffers
         self.current_strokes[hand_id] = []

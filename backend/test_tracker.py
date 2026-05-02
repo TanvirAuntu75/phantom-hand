@@ -4,7 +4,7 @@ import os
 import time
 from core.hand_tracker import UltimateHandTracker
 
-tracker = UltimateHandTracker(model_path=os.path.abspath('backend/hand_landmarker.task'))
+tracker = UltimateHandTracker(model_path=os.path.abspath('hand_landmarker.task'))
 frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
 for i in range(100):

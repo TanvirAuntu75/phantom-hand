@@ -17,6 +17,7 @@ import socketio
 
 # Ensure local imports work correctly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'core'))
 
 from backend.config import settings
 from backend.core.hand_tracker import UltimateHandTracker
@@ -135,7 +136,7 @@ async def lifespan(app: FastAPI):
 
 # ── APP_CONFIGURATION ─────────────────────────────────────────────────────────
 app = FastAPI(title="PHANTOM HAND Backend", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
 
 sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*', max_http_buffer_size=5*1024*1024)
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
