@@ -288,6 +288,25 @@ async def export_png():
     path, filename = await asyncio.to_thread(exporter.export_png, canvas)
     return {"status": "success", "path": path, "filename": filename}
 
+
+@app.post("/export/svg")
+async def export_svg():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_svg, canvas)
+    return {"status": "success", "path": path, "filename": filename}
+
+@app.post("/export/gif")
+async def export_gif():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_gif, canvas)
+    return {"status": "success", "path": path, "filename": filename}
+
+@app.post("/export/mp4")
+async def export_mp4():
+    if not canvas: raise HTTPException(status_code=500, detail="Canvas not initialized")
+    path, filename = await asyncio.to_thread(exporter.export_mp4, canvas)
+    return {"status": "success", "path": path, "filename": filename}
+
 @app.get("/export/{filename}")
 async def download_export(filename: str):
     filepath = os.path.join(exporter.export_dir, os.path.basename(filename))
